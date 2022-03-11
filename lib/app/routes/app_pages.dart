@@ -1,8 +1,12 @@
 import 'package:get/get.dart';
 
+import '../modules/camera/bindings/camera_binding.dart';
+import '../modules/camera/views/camera_view.dart';
 import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
 import '../modules/home/bindings/home_binding.dart';
+import '../modules/media/bindings/media_binding.dart';
+import '../modules/media/views/media_view.dart';
 
 part 'app_routes.dart';
 
@@ -19,5 +23,15 @@ class AppPages {
         bindings: [
           HomeBinding(),
         ]),
+    GetPage(
+      name: _Paths.MEDIA,
+      page: () => MediaView(),
+      binding: MediaBinding(),
+    ),
+    GetPage(
+      name: _Paths.CAMERA,
+      page: () => CameraView(),
+      binding: CameraBinding(),
+    ),
   ];
 }

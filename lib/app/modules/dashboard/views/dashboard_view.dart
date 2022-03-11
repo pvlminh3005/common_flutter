@@ -16,7 +16,8 @@ class DashboardView extends GetView<DashboardController> {
           controller: controller.tabController,
           children: controller.pages,
         ),
-        bottomNavigationBar: _BottomNavigatorCustom(controller.currentIndex),
+        bottomNavigationBar:
+            Obx(() => _BottomNavigatorCustom(controller.currentIndex)),
       ),
     );
   }
@@ -26,22 +27,25 @@ class _BottomNavigatorCustom extends StatelessWidget {
   final int currentIndex;
   const _BottomNavigatorCustom(this.currentIndex, {Key? key}) : super(key: key);
 
+  DashboardController get ctrl => Get.find();
+
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
       currentIndex: currentIndex,
+      onTap: ctrl.changeTab,
       items: [
         _itemBuilder(
-          title: 'CustomInput',
+          title: 'Common Input',
           icon: CupertinoIcons.pencil_ellipsis_rectangle,
         ),
         _itemBuilder(
-          title: 'CustomInput',
-          icon: Icons.input,
+          title: 'Camera Picker',
+          icon: CupertinoIcons.camera_fill,
         ),
         _itemBuilder(
-          title: 'CustomInput',
-          icon: Icons.input,
+          title: 'Media Picker',
+          icon: CupertinoIcons.square_fill_on_square_fill,
         ),
       ],
     );
