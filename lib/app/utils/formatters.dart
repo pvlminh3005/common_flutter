@@ -1,7 +1,7 @@
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 
 class InputFormatters {
-  static maskFormatters({
+  static MaskTextInputFormatter maskFormatters({
     String? mask,
     Map<String, RegExp>? filter,
     MaskAutoCompletionType type = MaskAutoCompletionType.eager,

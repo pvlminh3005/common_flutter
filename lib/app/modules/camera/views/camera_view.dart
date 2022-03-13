@@ -13,9 +13,16 @@ class CameraView extends GetView<CameraController> {
         centerTitle: true,
       ),
       body: Center(
-        child: Text(
-          'CameraView is working',
-          style: TextStyle(fontSize: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ElevatedButton(
+              onPressed: () {},
+              child: Text(
+                'Open Camera Picker',
+              ),
+            ),
+          ],
         ),
       ),
     );

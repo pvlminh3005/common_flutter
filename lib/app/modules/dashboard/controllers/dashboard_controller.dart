@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../home/views/home_view.dart';
+import '../../webview/views/webview_view.dart';
 
 class DashboardController extends GetxController
     with GetSingleTickerProviderStateMixin {
@@ -11,7 +12,9 @@ class DashboardController extends GetxController
     HomeView(),
     CameraView(),
     MediaView(),
+    WebviewView(),
   ];
+
   late TabController tabController;
   final _currentIndex = 0.obs;
   int get currentIndex => _currentIndex.value;

@@ -16,44 +16,52 @@ class DashboardView extends GetView<DashboardController> {
           controller: controller.tabController,
           children: controller.pages,
         ),
-        bottomNavigationBar:
-            Obx(() => _BottomNavigatorCustom(controller.currentIndex)),
+        bottomNavigationBar: _BottomNavigatorCustom(),
       ),
     );
   }
 }
 
 class _BottomNavigatorCustom extends StatelessWidget {
-  final int currentIndex;
-  const _BottomNavigatorCustom(this.currentIndex, {Key? key}) : super(key: key);
+  const _BottomNavigatorCustom({Key? key}) : super(key: key);
 
   DashboardController get ctrl => Get.find();
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      onTap: ctrl.changeTab,
-      items: [
-        _itemBuilder(
-          title: 'Common Input',
-          icon: CupertinoIcons.pencil_ellipsis_rectangle,
-        ),
-        _itemBuilder(
-          title: 'Camera Picker',
-          icon: CupertinoIcons.camera_fill,
-        ),
-        _itemBuilder(
-          title: 'Media Picker',
-          icon: CupertinoIcons.square_fill_on_square_fill,
-        ),
-      ],
-    );
+    return Obx(() => BottomNavigationBar(
+          currentIndex: ctrl.currentIndex,
+          onTap: ctrl.changeTab,
+          backgroundColor: Colors.grey.shade200,
+          fixedColor: Colors.grey.shade400,
+          iconSize: 20,
+          items: [
+            _itemBuilder(
+              title: 'Common Input',
+              icon: CupertinoIcons.pencil_ellipsis_rectangle,
+            ),
+            _itemBuilder(
+              title: 'Camera Picker',
+              icon: CupertinoIcons.camera_fill,
+            ),
+            _itemBuilder(
+              title: 'Media Picker',
+              icon: CupertinoIcons.square_fill_on_square_fill,
+            ),
+            _itemBuilder(
+              title: 'Common WebView',
+              icon: Icons.web,
+            ),
+          ],
+        ));
   }
 
   BottomNavigationBarItem _itemBuilder({String? title, IconData? icon}) {
     return BottomNavigationBarItem(
-      icon: Icon(icon),
+      icon: Icon(
+        icon,
+        color: Colors.grey.shade500,
+      ),
       label: title,
     );
   }

@@ -7,6 +7,7 @@ abstract class Routes {
   static const DASHBOARD = _Paths.DASHBOARD;
   static const MEDIA = _Paths.MEDIA;
   static const CAMERA = _Paths.CAMERA;
+  static const WEBVIEW = _Paths.WEBVIEW;
 }
 
 abstract class _Paths {
@@ -15,4 +16,5 @@ abstract class _Paths {
   static const DASHBOARD = '/dashboard';
   static const MEDIA = '/media';
   static const CAMERA = '/camera';
+  static const WEBVIEW = '/webview';
 }
