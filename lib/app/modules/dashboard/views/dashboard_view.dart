@@ -32,13 +32,11 @@ class _BottomNavigatorCustom extends StatelessWidget {
     return Obx(() => BottomNavigationBar(
           currentIndex: ctrl.currentIndex,
           onTap: ctrl.changeTab,
-          backgroundColor: Colors.grey.shade200,
-          fixedColor: Colors.grey.shade400,
-          iconSize: 20,
+          fixedColor: Colors.black,
           items: [
             _itemBuilder(
-              title: 'Common Input',
-              icon: CupertinoIcons.pencil_ellipsis_rectangle,
+              title: 'Input',
+              icon: CupertinoIcons.square_favorites_fill,
             ),
             _itemBuilder(
               title: 'Camera Picker',
@@ -49,8 +47,12 @@ class _BottomNavigatorCustom extends StatelessWidget {
               icon: CupertinoIcons.square_fill_on_square_fill,
             ),
             _itemBuilder(
-              title: 'Common WebView',
+              title: 'WebView',
               icon: Icons.web,
+            ),
+            _itemBuilder(
+              title: 'Profile',
+              icon: CupertinoIcons.person_crop_circle_fill,
             ),
           ],
         ));
@@ -60,7 +62,7 @@ class _BottomNavigatorCustom extends StatelessWidget {
     return BottomNavigationBarItem(
       icon: Icon(
         icon,
-        color: Colors.grey.shade500,
+        color: Colors.black,
       ),
       label: title,
     );

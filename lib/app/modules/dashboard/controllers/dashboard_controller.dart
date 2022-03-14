@@ -1,5 +1,6 @@
 import 'package:custom_common/app/modules/camera/views/camera_view.dart';
 import 'package:custom_common/app/modules/media/views/media_view.dart';
+import 'package:custom_common/app/modules/profile/views/profile_view.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -13,6 +14,7 @@ class DashboardController extends GetxController
     CameraView(),
     MediaView(),
     WebviewView(),
+    ProfileView(),
   ];
 
   late TabController tabController;
