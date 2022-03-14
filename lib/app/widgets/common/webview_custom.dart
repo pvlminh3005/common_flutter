@@ -10,11 +10,13 @@ class WebviewCustom extends StatefulWidget {
   final TextEditingController? controller;
   final String? url;
   final Function(String?)? onSubmitted;
+  final Function(int)? onProcess;
 
   const WebviewCustom({
     this.controller,
     this.url,
     this.onSubmitted,
+    this.onProcess,
     Key? key,
   }) : super(key: key);
 
@@ -25,11 +27,14 @@ class WebviewCustom extends StatefulWidget {
 class _WebviewCustomState extends State<WebviewCustom> {
   final Completer<WebViewController> _controller =
       Completer<WebViewController>();
+  late String? initialURL;
+
   bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    initialURL = widget.url;
     if (Platform.isAndroid) {
       WebView.platform = SurfaceAndroidWebView();
     }
@@ -39,28 +44,46 @@ class _WebviewCustomState extends State<WebviewCustom> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        InputCustom(
-          controller: widget.controller,
-          margin: const EdgeInsets.all(12.0),
-          prefixIcon: Icon(CupertinoIcons.search),
-          keyboardType: TextInputType.phone,
-          showClear: true,
-          hintText: 'Input URL',
-          onSubmitted: widget.onSubmitted,
+        FutureBuilder<WebViewController>(
+          future: _controller.future,
+          builder: (BuildContext context,
+              AsyncSnapshot<WebViewController> controller) {
+            if (controller.hasData) {
+              return InputCustom(
+                controller: widget.controller,
+                margin: const EdgeInsets.all(12.0),
+                prefixIcon: Icon(CupertinoIcons.search),
+                showClear: true,
+                hintText: 'Input URL',
+                onSubmitted: (value) {
+                  if (value != null) {
+                    widget.onSubmitted;
+                    String defaultUrl = 'https://www.';
+                    controller.data!.loadUrl('${defaultUrl + value}/');
+                  }
+                },
+              );
+            }
+            return SizedBox.shrink();
+          },
         ),
         Expanded(
           child: Stack(
             children: [
               WebView(
-                initialUrl: widget.url,
+                initialUrl: initialURL,
                 javascriptMode: JavascriptMode.unrestricted,
                 onPageFinished: (finish) {
-                  setState(() {
-                    isLoading = false;
-                  });
+                  setState(() => isLoading = false);
                 },
+                onPageStarted: (start) => setState(() => isLoading = true),
                 onWebViewCreated: (WebViewController webViewController) {
                   _controller.complete(webViewController);
+                },
+                onProgress: widget.onProcess,
+                onWebResourceError: (WebResourceError error) async {
+                  isLoading = false;
+                  setState(() {});
                 },
               ),
               isLoading

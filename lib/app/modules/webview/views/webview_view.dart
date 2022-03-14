@@ -24,7 +24,6 @@ class _WebviewViewState extends State<WebviewView>
       body: Obx(
         () => WebviewCustom(
           controller: controller.inputController,
-          onSubmitted: (value) => controller.handleSubmit(),
           url: controller.url,
         ),
       ),
