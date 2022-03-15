@@ -1,11 +1,10 @@
-import 'package:custom_common/app/utils/formatters.dart';
-import 'package:custom_common/app/utils/validators.dart';
 import 'package:custom_common/app/widgets/common/input_custom.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
+import '../../../utilities/utilities.dart';
 import '../controllers/home_controller.dart';
 
 class HomeView extends GetView<HomeController> {
@@ -30,7 +29,7 @@ class HomeView extends GetView<HomeController> {
                   keyboardType: TextInputType.phone,
                   hintText: '0000 000 000',
                   inputFormatters: [
-                    InputFormatters.maskFormatters(mask: '#### ### ###'),
+                    MaskTextInputFormatter(mask: '#### ### ###'),
                   ],
                 ),
                 InputCustom(
@@ -48,14 +47,14 @@ class HomeView extends GetView<HomeController> {
                   ),
                   hintText: 'CCV / CVC',
                   inputFormatters: [
-                    InputFormatters.maskFormatters(mask: '### / ###'),
+                    MaskTextInputFormatter(mask: '### / ###'),
                   ],
                 ),
                 InputCustom(
                   prefixIcon: Icon(Icons.calendar_month_outlined),
                   hintText: 'dd / mm / yyyy',
                   inputFormatters: [
-                    InputFormatters.maskFormatters(mask: '## / ## / ####'),
+                    MaskTextInputFormatter(mask: '## / ## / ###'),
                   ],
                 ),
                 Form(

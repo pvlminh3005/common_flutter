@@ -1,13 +1,33 @@
 import 'package:dio/dio.dart';
+import 'package:dio_http_cache/dio_http_cache.dart';
 
 enum ApiMethod {
   GET,
   POST,
   PUT,
+  DELETE,
   PATCH,
 }
 
-class RestApiClient {
+class ApiClient {
+  ApiClient._();
+
+  static final int sendTimeout = 6 * 1000;
+  static final int receiveTimeout = 6 * 1000;
+  static final int connectTimeout = 6 * 1000;
+  static final BaseOptions baseOptions = BaseOptions(
+    sendTimeout: sendTimeout,
+    receiveTimeout: receiveTimeout,
+    connectTimeout: connectTimeout,
+  );
+
+  final dio = Dio(baseOptions)
+    ..interceptors.add(InterceptorsWrapper(
+      onError: _CustomInterceptors().onError,
+      onResponse: _CustomInterceptors().onResponse,
+      onRequest: _CustomInterceptors().onRequest,
+    ));
+
   static Future restApiClient({
     required String url,
     ApiMethod method = ApiMethod.GET,
@@ -41,7 +61,7 @@ class RestApiClient {
         return response.data;
       }
     } on DioError catch (err) {
-      _handleError(err);
+      throw _handleError(err);
     }
   }
 
@@ -60,5 +80,27 @@ class RestApiClient {
       default:
         return "Request was cancelled";
     }
+  }
+}
+
+class _CustomInterceptors extends Interceptor {
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    print('REQUEST[${options.method}] => PATH: ${options.path}');
+    return super.onRequest(options, handler);
+  }
+
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    print(
+        'RESPONSE[${response.statusCode}] => PATH: ${response.requestOptions.path}');
+    return super.onResponse(response, handler);
+  }
+
+  @override
+  void onError(DioError err, ErrorInterceptorHandler handler) {
+    print(
+        'ERROR[${err.response?.statusCode}] => PATH: ${err.requestOptions.path}');
+    return super.onError(err, handler);
   }
 }

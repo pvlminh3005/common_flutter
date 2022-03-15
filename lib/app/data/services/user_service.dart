@@ -1,10 +1,11 @@
 import 'package:custom_common/app/data/models/user_model.dart';
-import 'package:custom_common/app/utils/rest_api.dart';
+
+import '../../utilities/utilities.dart';
 
 class UserService {
   static Future<List<UserModel>?> fetchUsers(Map<String, dynamic> query) async {
     try {
-      var data = await RestApiClient.restApiClient(
+      var data = await ApiClient.restApiClient(
         url: 'https://agrichapp.herokuapp.com/members',
         queryParameters: query,
       );

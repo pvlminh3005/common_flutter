@@ -18,6 +18,10 @@ class MediaView extends GetView<MediaController> {
           style: TextStyle(fontSize: 20),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        child: Icon(Icons.add),
+      ),
     );
   }
 }

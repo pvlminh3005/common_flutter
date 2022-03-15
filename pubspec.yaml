@@ -9,10 +9,10 @@ dependencies:
   camera: ^0.9.4+16
   cupertino_icons: ^1.0.2
   dio: ^4.0.4
+  dio_http_cache: ^0.3.0
   flutter:
     sdk: flutter
   get: 4.6.1
-  mask_text_input_formatter: ^2.1.0
   webview_flutter: ^3.0.1
 
 dev_dependencies:
