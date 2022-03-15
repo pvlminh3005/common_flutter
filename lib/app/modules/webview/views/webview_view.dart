@@ -14,24 +14,26 @@ class _WebviewViewState extends State<WebviewView>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: AppBar(
-        title: Text('WebviewView'),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          InputCustom(
-            hintText: 'URL: ',
-            margin: const EdgeInsets.all(8.0),
-            onSubmitted: (value) {
-              url = value!;
-              setState(() {});
-            },
-          ),
-          Expanded(
-            child: WebviewCustom(url: url),
-          ),
-        ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            InputCustom(
+              hintText: 'URL: ',
+              showClear: true,
+              margin: const EdgeInsets.all(8.0),
+              onSubmitted: (value) {
+                url = value!;
+                setState(() {});
+              },
+            ),
+            Expanded(
+              child: WebviewCustom(
+                url: url,
+                showAppBar: true,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

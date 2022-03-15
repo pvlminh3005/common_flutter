@@ -1,14 +1,16 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class WebviewCustom extends StatefulWidget {
-  final String? url, title;
+  final String? url;
+  final bool showAppBar;
 
   const WebviewCustom({
     this.url,
-    this.title,
+    this.showAppBar = false,
     Key? key,
   }) : super(key: key);
 
@@ -17,15 +19,19 @@ class WebviewCustom extends StatefulWidget {
 }
 
 class _WebviewCustomState extends State<WebviewCustom> {
-  late WebViewController _controller;
-  late String? initialURL;
+  final _controller = Completer<WebViewController>();
+  String get initialUrl {
+    if (!widget.url!.contains('https://')) {
+      return 'https://${widget.url}';
+    }
+    return widget.url!;
+  }
 
   final isLoading = ValueNotifier(false);
 
   @override
   void initState() {
     super.initState();
-    updateUrl();
     if (Platform.isAndroid) {
       WebView.platform = SurfaceAndroidWebView();
     }
@@ -39,35 +45,35 @@ class _WebviewCustomState extends State<WebviewCustom> {
     super.didUpdateWidget(oldWidget);
   }
 
-  void updateUrl() async {
-    if (widget.url!.contains('https://')) {
-      initialURL = widget.url;
-    } else {
-      initialURL = 'https://${widget.url}';
-    }
-    _controller.loadUrl(initialURL!);
-  }
+  void updateUrl() async => (await _controller.future).loadUrl(initialUrl);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: widget.showAppBar
+          ? AppBar(
+              title: Text(initialUrl),
+              centerTitle: true,
+            )
+          : null,
       body: Stack(
         children: [
           WebView(
-            initialUrl: initialURL,
+            initialUrl: initialUrl,
             onPageStarted: (start) => isLoading.value = true,
             onPageFinished: (finished) => isLoading.value = false,
             onWebViewCreated: (WebViewController webViewController) {
-              _controller = webViewController;
+              _controller.complete(webViewController);
             },
           ),
           ValueListenableBuilder(
-              valueListenable: isLoading,
-              builder: (ctx, bool status, child) {
-                return isLoading.value
-                    ? Center(child: CircularProgressIndicator())
-                    : const SizedBox();
-              }),
+            valueListenable: isLoading,
+            builder: (ctx, bool status, child) {
+              return isLoading.value
+                  ? Center(child: CircularProgressIndicator())
+                  : const SizedBox();
+            },
+          ),
         ],
       ),
     );
