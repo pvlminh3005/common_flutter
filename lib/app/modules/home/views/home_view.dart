@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
+import '../../../utilities/formatters/currency_input_formatter.dart';
 import '../../../utilities/utilities.dart';
 import '../controllers/home_controller.dart';
 
@@ -34,9 +35,16 @@ class HomeView extends GetView<HomeController> {
                 ),
                 InputCustom(
                   controller: controller.searchController,
-                  prefixIcon: Icon(Icons.search),
+                  prefixIcon: Icon(Icons.money),
                   showClear: true,
-                  hintText: 'Search',
+                  hintText: '0 VND',
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    CurrencyTextInputFormatter(
+                      decimalDigits: 0,
+                      symbol: '',
+                    ),
+                  ],
                 ),
                 InputCustom(
                   prefixIcon: Icon(CupertinoIcons.viewfinder),
