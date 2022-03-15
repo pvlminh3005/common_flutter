@@ -46,6 +46,7 @@ class HomeView extends GetView<HomeController> {
                     onPressed: () {},
                   ),
                   hintText: 'CCV / CVC',
+                  keyboardType: TextInputType.number,
                   inputFormatters: [
                     MaskTextInputFormatter(mask: '### / ###'),
                   ],
@@ -53,8 +54,9 @@ class HomeView extends GetView<HomeController> {
                 InputCustom(
                   prefixIcon: Icon(Icons.calendar_month_outlined),
                   hintText: 'dd / mm / yyyy',
+                  keyboardType: TextInputType.number,
                   inputFormatters: [
-                    MaskTextInputFormatter(mask: '## / ## / ###'),
+                    MaskTextInputFormatter(mask: '## / ## / ####'),
                   ],
                 ),
                 Form(

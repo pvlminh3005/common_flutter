@@ -1,9 +1,6 @@
+import 'package:custom_common/app/widgets/common/input_custom.dart';
 import 'package:custom_common/app/widgets/common/webview_custom.dart';
 import 'package:flutter/material.dart';
-
-import 'package:get/get.dart';
-
-import '../controllers/webview_controller.dart';
 
 class WebviewView extends StatefulWidget {
   @override
@@ -12,7 +9,7 @@ class WebviewView extends StatefulWidget {
 
 class _WebviewViewState extends State<WebviewView>
     with AutomaticKeepAliveClientMixin {
-  WebviewController get controller => Get.find();
+  String url = 'https://flutter.dev';
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -21,11 +18,20 @@ class _WebviewViewState extends State<WebviewView>
         title: Text('WebviewView'),
         centerTitle: true,
       ),
-      body: Obx(
-        () => WebviewCustom(
-          controller: controller.inputController,
-          url: controller.url,
-        ),
+      body: Column(
+        children: [
+          InputCustom(
+            hintText: 'URL: ',
+            margin: const EdgeInsets.all(8.0),
+            onSubmitted: (value) {
+              url = value!;
+              setState(() {});
+            },
+          ),
+          Expanded(
+            child: WebviewCustom(url: url),
+          ),
+        ],
       ),
     );
   }
