@@ -33,6 +33,7 @@ class _BottomNavigatorCustom extends StatelessWidget {
           currentIndex: ctrl.currentIndex,
           onTap: ctrl.changeTab,
           fixedColor: Colors.black,
+          selectedLabelStyle: TextStyle(fontSize: 11.0),
           items: [
             _itemBuilder(
               title: 'Input',

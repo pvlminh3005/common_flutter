@@ -1,7 +1,9 @@
+import 'package:custom_common/app/packages/views/camera_common.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
+import '../../../packages/views/test_camera.dart';
 import '../controllers/camera_controller.dart';
 
 class CameraView extends GetView<CameraController> {
@@ -17,9 +19,17 @@ class CameraView extends GetView<CameraController> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => CameraCommon()),
+                  // MaterialPageRoute(builder: (_) => CameraExampleHome()),
+                );
+              },
               child: Text(
                 'Open Camera Picker',
+              ),
+              style: ElevatedButton.styleFrom(
+                primary: Theme.of(context).primaryColor,
               ),
             ),
           ],
