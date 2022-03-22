@@ -162,10 +162,6 @@ class _CameraCommonState extends State<CameraCommon>
             Expanded(
               child: Stack(
                 children: [
-<<<<<<< HEAD:lib/app/packages/camera/src/camera_view.dart
-=======
-                  // _cameraBuilder(),
->>>>>>> 46436e236a39b33cf11dada820d83ad923480c46:lib/app/packages/views/camera_common.dart
                   _cameraPreviewWidget(),
                   Positioned(
                     top: 45,
@@ -253,8 +249,6 @@ class _CameraCommonState extends State<CameraCommon>
             ),
     );
   }
-
-
 
   void _flip() {
     setState(() {
