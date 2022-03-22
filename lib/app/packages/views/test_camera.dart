@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 
-import 'camera_common.dart';
+import '../camera/src/camera_view.dart';
 
 class CameraExampleHome extends StatefulWidget {
   @override
@@ -65,13 +65,7 @@ class _CameraExampleHomeState extends State<CameraExampleHome>
   @override
   void initState() {
     super.initState();
-    controller = CameraController(cameras[0], ResolutionPreset.max);
-    controller!.initialize().then((_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {});
-    });
+    onNewCameraSelected(cameras[0]);
     _ambiguate(WidgetsBinding.instance)?.addObserver(this);
 
     _flashModeControlRowAnimationController = AnimationController(

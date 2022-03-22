@@ -1,8 +1,8 @@
-import 'package:custom_common/app/packages/views/camera_common.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
+import 'app/packages/camera/camera.dart';
 import 'app/routes/app_pages.dart';
 
 void main() async {
