@@ -20,7 +20,14 @@ class CameraView extends GetView<CameraController> {
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => CameraCommon()),
+                  MaterialPageRoute(
+                      builder: (_) => CameraCommon(
+                            // onlyEnableRecording: true,
+                            // enablePinchToZoom: true,
+                            // shouldAutoPreviewVideo: true,
+                            // enableRecording: true,
+                            enableSetExposure: false,
+                          )),
                   // MaterialPageRoute(builder: (_) => CameraExampleHome()),
                 );
               },

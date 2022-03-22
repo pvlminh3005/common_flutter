@@ -7,7 +7,6 @@ import 'package:camera/camera.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 
 import '../camera.dart';
@@ -21,7 +20,37 @@ T? _ambiguate<T>(T? value) => value;
 
 List<CameraDescription> cameras = <CameraDescription>[];
 
+// ignore: must_be_immutable
 class CameraCommon extends StatefulWidget {
+  final int cameraQuarterTurns;
+  final bool enableRecording;
+  final bool onlyEnableRecording;
+  late bool enableAudio;
+  final bool enableSetExposure;
+  final bool enableExposureControl;
+  final bool enablePinchToZoom;
+  final bool enablePullToZoomInRecord;
+  final bool shouldAutoPreviewVideo;
+  final Duration? maximumRecordingDuration;
+  final ThemeData? theme;
+  final ResolutionPreset resolutionPreset;
+
+  CameraCommon({
+    Key? key,
+    this.cameraQuarterTurns = 0,
+    this.enableRecording = true,
+    this.onlyEnableRecording = false,
+    this.enableAudio = true,
+    this.enableSetExposure = true,
+    this.enableExposureControl = false,
+    this.enablePinchToZoom = false,
+    this.enablePullToZoomInRecord = false,
+    this.shouldAutoPreviewVideo = false,
+    this.maximumRecordingDuration = const Duration(seconds: 15),
+    this.theme,
+    this.resolutionPreset = ResolutionPreset.max,
+  }) : super(key: key);
+
   @override
   _CameraCommonState createState() {
     return _CameraCommonState();
@@ -61,16 +90,13 @@ class _CameraCommonState extends State<CameraCommon>
   XFile? videoFile;
   VideoPlayerController? videoController;
   VoidCallback? videoPlayerListener;
-  bool enableAudio = true;
   double _minAvailableExposureOffset = 0.0;
   double _maxAvailableExposureOffset = 0.0;
   double _currentExposureOffset = 0.0;
+  late AnimationController _swapLensCameraAnimationController;
   late AnimationController _flashModeControlRowAnimationController;
-  late Animation<double> _flashModeControlRowAnimation;
   late AnimationController _exposureModeControlRowAnimationController;
-  late Animation<double> _exposureModeControlRowAnimation;
   late AnimationController _focusModeControlRowAnimationController;
-  late Animation<double> _focusModeControlRowAnimation;
   double _minAvailableZoom = 1.0;
   double _maxAvailableZoom = 1.0;
   double _currentScale = 1.0;
@@ -85,41 +111,48 @@ class _CameraCommonState extends State<CameraCommon>
   CameraType cameraType = CameraType.camera;
   bool isRecording = false;
   bool _showBlur = false;
+  bool _showExposure = false;
+  bool _showFocus = false;
+
+  //focus offset
+  late Offset offsetTap = Offset.zero;
 
   late TabController tabController;
-
-  bool _showExposure = false;
 
   @override
   void initState() {
     super.initState();
+    if (widget.onlyEnableRecording) {
+      cameraType = CameraType.video;
+    }
+
     tabController = TabController(length: 2, vsync: this);
     onNewCameraSelected(cameras[lensCamera]);
     _ambiguate(WidgetsBinding.instance)?.addObserver(this);
 
-    _flashModeControlRowAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+    _swapLensCameraAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      value: 1,
+      lowerBound: 1,
+      upperBound: 1.5,
       vsync: this,
     );
-    _flashModeControlRowAnimation = CurvedAnimation(
-      parent: _flashModeControlRowAnimationController,
-      curve: Curves.easeInCubic,
+    _flashModeControlRowAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      value: 1,
+      lowerBound: 1,
+      upperBound: 1.5,
+      vsync: this,
     );
     _exposureModeControlRowAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _exposureModeControlRowAnimation = CurvedAnimation(
-      parent: _exposureModeControlRowAnimationController,
-      curve: Curves.easeInCubic,
-    );
     _focusModeControlRowAnimationController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 100),
+      value: .8,
+      lowerBound: .6,
       vsync: this,
-    );
-    _focusModeControlRowAnimation = CurvedAnimation(
-      parent: _focusModeControlRowAnimationController,
-      curve: Curves.easeInCubic,
     );
   }
 
@@ -166,27 +199,31 @@ class _CameraCommonState extends State<CameraCommon>
                   Positioned(
                     top: 45,
                     right: 10,
-                    child: IconButton(
-                      onPressed: () {
-                        setState(() => flashOn = !flashOn);
-                        onSetFlashModeButtonPressed(
-                            flashOn ? FlashMode.torch : FlashMode.off);
-                      },
-                      icon: Icon(
-                        flashOn
-                            ? Icons.flash_on_rounded
-                            : Icons.flash_off_rounded,
-                        color: flashOn ? Colors.yellow : Colors.white,
-                        size: 30,
+                    child: ScaleTransition(
+                      scale: _flashModeControlRowAnimationController,
+                      child: IconButton(
+                        onPressed: () {
+                          setState(() => flashOn = !flashOn);
+                          onSetFlashModeButtonPressed(
+                              flashOn ? FlashMode.torch : FlashMode.off);
+                        },
+                        icon: Icon(
+                          flashOn
+                              ? Icons.flash_on_rounded
+                              : Icons.flash_off_rounded,
+                          color: flashOn ? Colors.yellow : Colors.white,
+                          size: 30,
+                        ),
                       ),
                     ),
                   ),
+                  _focusBuilder(),
                   _ExposureOffsetBuilder(
                     onPointerDown: (_) => _pointers++,
                     onPointerUp: (_) {
                       _pointers--;
                       _pointers = _pointers < 0 ? 0 : _pointers;
-                      timOutShowExposure();
+                      timOutShowFocusMode();
                     },
                     showExposure: _showExposure,
                     onChanged: setExposureOffset,
@@ -199,22 +236,45 @@ class _CameraCommonState extends State<CameraCommon>
               ),
             ),
             // const Spacer(),
-            _TabBarBuilder(
-              tabController: tabController,
-              onTap: (index) async {
-                setState(() {
-                  _showBlur = true;
-                  cameraType = CameraType.values[index];
-                });
-                await Future.delayed(Duration(milliseconds: 400));
-                setState(() => _showBlur = false);
-              },
-            ),
+            if (!widget.onlyEnableRecording && widget.enableRecording)
+              _TabBarBuilder(
+                tabController: tabController,
+                onTap: (index) async {
+                  setState(() {
+                    _showBlur = true;
+                    cameraType = CameraType.values[index];
+                  });
+                  await Future.delayed(Duration(milliseconds: 400));
+                  setState(() => _showBlur = false);
+                },
+              ),
 
             _bottomBuilder(),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _focusBuilder() {
+    return Stack(
+      children: [
+        Positioned(
+          top: offsetTap.dy,
+          left: offsetTap.dx,
+          child: _showFocus
+              ? ScaleTransition(
+                  scale: _focusModeControlRowAnimationController,
+                  child: GestureDetector(
+                    child: Image.asset(
+                      'assets/images/frame.png',
+                      color: Colors.yellow,
+                    ),
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 
@@ -227,6 +287,7 @@ class _CameraCommonState extends State<CameraCommon>
               onTakePictureButtonPressed: onTakePictureButtonPressed,
               childRight: _IconButtonBuilder(
                 controller,
+                swapLensController: _swapLensCameraAnimationController,
                 onPressedRecord: controller.value.isRecordingPaused
                     ? onResumeButtonPressed
                     : onPauseButtonPressed,
@@ -235,10 +296,12 @@ class _CameraCommonState extends State<CameraCommon>
             )
           : _RecordItemBuilder(
               videoController: videoController,
+              shouldAutoPreviewVideo: widget.shouldAutoPreviewVideo,
               videoFile: videoFile,
               isRecording: controller.value.isRecordingVideo,
               childRight: _IconButtonBuilder(
                 controller,
+                swapLensController: _swapLensCameraAnimationController,
                 onPressedRecord: controller.value.isRecordingPaused
                     ? onResumeButtonPressed
                     : onPauseButtonPressed,
@@ -257,6 +320,9 @@ class _CameraCommonState extends State<CameraCommon>
   }
 
   void swapLensCamera() async {
+    _swapLensCameraAnimationController
+        .forward()
+        .then((_) => _swapLensCameraAnimationController.reverse());
     _flip();
 
     await Future.delayed(Duration(milliseconds: 400), () {
@@ -268,12 +334,8 @@ class _CameraCommonState extends State<CameraCommon>
   /// Display the preview from the camera (or a message if the preview is not available).
   Widget _cameraPreviewWidget() {
     return Listener(
-      onPointerDown: (value) {
-        _pointers++;
-      },
-      onPointerUp: (value) {
-        _pointers--;
-      },
+      onPointerDown: (_) => _pointers++,
+      onPointerUp: (_) => _pointers--,
       child: CameraPreview(
         controller,
         child: LayoutBuilder(
@@ -283,22 +345,34 @@ class _CameraCommonState extends State<CameraCommon>
             onScaleStart: _handleScaleStart,
             onScaleUpdate: _handleScaleUpdate,
             onLongPress: () {
-              setState(() => _showExposure = true);
+              if (widget.enableSetExposure) {
+                setState(() => _showExposure = true);
+              }
             },
-            onLongPressMoveUpdate: (value) => timOutShowExposure(),
+            onLongPressMoveUpdate: (value) => timOutShowFocusMode(),
             onTapDown: (TapDownDetails details) =>
                 onViewFinderTap(details, constraints),
+            onTapUp: (TapUpDetails details) {
+              Timer(Duration(seconds: 2), () {
+                if (_pointers == 0) {
+                  setState(() {
+                    _showFocus = false;
+                  });
+                }
+              });
+            },
           );
         }),
       ),
     );
   }
 
-  void timOutShowExposure() {
+  void timOutShowFocusMode() {
     Timer(Duration(seconds: 3), () {
       if (_pointers == 0) {
         setState(() {
           _showExposure = false;
+          _showFocus = false;
         });
       }
     });
@@ -310,7 +384,7 @@ class _CameraCommonState extends State<CameraCommon>
 
   Future<void> _handleScaleUpdate(ScaleUpdateDetails details) async {
     // When there are not exactly two fingers on screen don't scale
-    if (_pointers != 2) {
+    if (_pointers != 2 || !widget.enablePinchToZoom) {
       return;
     }
 
@@ -327,22 +401,37 @@ class _CameraCommonState extends State<CameraCommon>
     _scaffoldKey.currentState?.showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void onViewFinderTap(TapDownDetails details, BoxConstraints constraints) {
+  void onViewFinderTap(
+      TapDownDetails details, BoxConstraints constraints) async {
+    if (_pointers == 2) {
+      return;
+    }
     final CameraController cameraController = controller;
 
-    final Offset offset = Offset(
+    final offset = Offset(
       details.localPosition.dx / constraints.maxWidth,
       details.localPosition.dy / constraints.maxHeight,
     );
+
+    final getOffset =
+        Offset(details.localPosition.dx - 55, details.localPosition.dy - 55);
+
+    setState(() {
+      _showFocus = true;
+      offsetTap = getOffset;
+    });
+
     cameraController.setExposurePoint(offset);
     cameraController.setFocusPoint(offset);
+
+    onFocusModeButtonPressed();
   }
 
   Future<void> onNewCameraSelected(CameraDescription cameraDescription) async {
     controller = CameraController(
       cameraDescription,
-      ResolutionPreset.max,
-      enableAudio: enableAudio,
+      widget.resolutionPreset,
+      enableAudio: widget.enableAudio,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
 
@@ -400,38 +489,41 @@ class _CameraCommonState extends State<CameraCommon>
     });
   }
 
-  void onFlashModeButtonPressed() {
-    if (_flashModeControlRowAnimationController.value == 1) {
-      _flashModeControlRowAnimationController.reverse();
-    } else {
-      _flashModeControlRowAnimationController.forward();
-      _exposureModeControlRowAnimationController.reverse();
-      _focusModeControlRowAnimationController.reverse();
-    }
-  }
+  // void onFlashModeButtonPressed() {
+  //   if (_flashModeControlRowAnimationController.value == 1) {
+  //     _flashModeControlRowAnimationController.reverse();
+  //   } else {
+  //     _flashModeControlRowAnimationController.forward();
+  //     _exposureModeControlRowAnimationController.reverse();
+  //     _focusModeControlRowAnimationController.reverse();
+  //   }
+  // }
 
-  void onExposureModeButtonPressed() {
-    if (_exposureModeControlRowAnimationController.value == 1) {
-      _exposureModeControlRowAnimationController.reverse();
-    } else {
-      _exposureModeControlRowAnimationController.forward();
-      _flashModeControlRowAnimationController.reverse();
-      _focusModeControlRowAnimationController.reverse();
-    }
-  }
+  // void onExposureModeButtonPressed() {
+  //   if (_exposureModeControlRowAnimationController.value == 1) {
+  //     _exposureModeControlRowAnimationController.reverse();
+  //   } else {
+  //     _exposureModeControlRowAnimationController.forward();
+  //     _flashModeControlRowAnimationController.reverse();
+  //     _focusModeControlRowAnimationController.reverse();
+  //   }
+  // }
 
   void onFocusModeButtonPressed() {
-    if (_focusModeControlRowAnimationController.value == 1) {
-      _focusModeControlRowAnimationController.reverse();
-    } else {
-      _focusModeControlRowAnimationController.forward();
-      _flashModeControlRowAnimationController.reverse();
-      _exposureModeControlRowAnimationController.reverse();
-    }
+    _focusModeControlRowAnimationController
+        .forward()
+        .then((value) => _focusModeControlRowAnimationController.reverse());
+
+    // if (_focusModeControlRowAnimationController.value == 1) {
+    //   _focusModeControlRowAnimationController.reverse();
+    // } else {
+    //   _flashModeControlRowAnimationController.reverse();
+    //   _exposureModeControlRowAnimationController.reverse();
+    // }
   }
 
   void onAudioModeButtonPressed() {
-    enableAudio = !enableAudio;
+    widget.enableAudio = !widget.enableAudio;
     onNewCameraSelected(controller.description);
   }
 
@@ -453,6 +545,9 @@ class _CameraCommonState extends State<CameraCommon>
 
   void onSetFlashModeButtonPressed(FlashMode mode) {
     setFlashMode(mode).then((_) {
+      _flashModeControlRowAnimationController
+          .forward()
+          .then((value) => _flashModeControlRowAnimationController.reverse());
       if (mounted) {
         setState(() {});
       }
@@ -621,6 +716,7 @@ class _CameraCommonState extends State<CameraCommon>
 
   Future<void> setExposureOffset(double offset) async {
     setState(() {
+      _showFocus = false;
       _currentExposureOffset = offset;
     });
     try {
@@ -760,6 +856,7 @@ class _CameraItemBuilder extends StatelessWidget {
 
 class _RecordItemBuilder extends StatelessWidget {
   final VideoPlayerController? videoController;
+  final bool shouldAutoPreviewVideo;
   final XFile? videoFile;
   final Widget? childRight;
   final bool isRecording;
@@ -767,6 +864,7 @@ class _RecordItemBuilder extends StatelessWidget {
 
   const _RecordItemBuilder({
     this.videoController,
+    this.shouldAutoPreviewVideo = false,
     this.videoFile,
     this.childRight,
     this.isRecording = false,
@@ -777,7 +875,7 @@ class _RecordItemBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (videoController != null) {
+    if (videoController != null && !shouldAutoPreviewVideo) {
       videoController!.pause();
     }
     return Row(
@@ -937,10 +1035,12 @@ class _ExposureOffsetBuilder extends StatelessWidget {
 
 class _IconButtonBuilder extends StatelessWidget {
   final CameraController controller;
+  final AnimationController? swapLensController;
   final VoidCallback? onPressedRecord, onPressSwapLens;
 
   const _IconButtonBuilder(
     this.controller, {
+    this.swapLensController,
     this.onPressedRecord,
     this.onPressSwapLens,
     Key? key,
@@ -948,6 +1048,14 @@ class _IconButtonBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final child = IconButton(
+      icon: Icon(
+        CupertinoIcons.camera_rotate_fill,
+        color: Colors.white,
+        size: 30,
+      ),
+      onPressed: onPressSwapLens,
+    );
     if (controller.value.isRecordingVideo) {
       return IconButton(
         iconSize: 32,
@@ -959,15 +1067,12 @@ class _IconButtonBuilder extends StatelessWidget {
         ),
         onPressed: onPressedRecord,
       );
+    } else {
+      if (swapLensController == null) {
+        return child;
+      }
+      return ScaleTransition(scale: swapLensController!, child: child);
     }
-    return IconButton(
-      icon: Icon(
-        CupertinoIcons.camera_rotate_fill,
-        color: Colors.white,
-        size: 30,
-      ),
-      onPressed: onPressSwapLens,
-    );
   }
 }
 
