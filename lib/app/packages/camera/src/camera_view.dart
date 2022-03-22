@@ -217,7 +217,12 @@ class _CameraCommonState extends State<CameraCommon>
                       ),
                     ),
                   ),
-                  _focusBuilder(),
+                  _FocusOffsetBuilder(
+                    offset: offsetTap,
+                    focusModeController:
+                        _focusModeControlRowAnimationController,
+                    showFocus: _showFocus,
+                  ),
                   _ExposureOffsetBuilder(
                     onPointerDown: (_) => _pointers++,
                     onPointerUp: (_) {
@@ -1029,6 +1034,40 @@ class _ExposureOffsetBuilder extends StatelessWidget {
               : const SizedBox.shrink(),
         ),
       ),
+    );
+  }
+}
+
+class _FocusOffsetBuilder extends StatelessWidget {
+  final Offset offset;
+  final bool showFocus;
+  final AnimationController focusModeController;
+
+  const _FocusOffsetBuilder({
+    required this.offset,
+    required this.focusModeController,
+    this.showFocus = false,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned(
+          top: offset.dy,
+          left: offset.dx,
+          child: showFocus
+              ? ScaleTransition(
+                  scale: focusModeController,
+                  child: Image.asset(
+                    'assets/images/frame.png',
+                    color: Colors.yellow,
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 }
