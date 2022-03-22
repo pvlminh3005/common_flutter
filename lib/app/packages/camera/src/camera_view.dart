@@ -162,6 +162,10 @@ class _CameraCommonState extends State<CameraCommon>
             Expanded(
               child: Stack(
                 children: [
+<<<<<<< HEAD:lib/app/packages/camera/src/camera_view.dart
+=======
+                  // _cameraBuilder(),
+>>>>>>> 46436e236a39b33cf11dada820d83ad923480c46:lib/app/packages/views/camera_common.dart
                   _cameraPreviewWidget(),
                   Positioned(
                     top: 45,
@@ -250,6 +254,8 @@ class _CameraCommonState extends State<CameraCommon>
     );
   }
 
+
+
   void _flip() {
     setState(() {
       angle = (angle + pi) % (2 * pi);
@@ -268,8 +274,12 @@ class _CameraCommonState extends State<CameraCommon>
   /// Display the preview from the camera (or a message if the preview is not available).
   Widget _cameraPreviewWidget() {
     return Listener(
-      onPointerDown: (_) => _pointers++,
-      onPointerUp: (_) => _pointers--,
+      onPointerDown: (value) {
+        _pointers++;
+      },
+      onPointerUp: (value) {
+        _pointers--;
+      },
       child: CameraPreview(
         controller,
         child: LayoutBuilder(
