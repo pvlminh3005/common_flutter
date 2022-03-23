@@ -6,7 +6,6 @@ import '../modules/dashboard/views/dashboard_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/media/bindings/media_binding.dart';
 import '../modules/profile/bindings/profile_binding.dart';
-import '../modules/profile/views/profile_view.dart';
 import '../modules/webview/bindings/webview_binding.dart';
 
 part 'app_routes.dart';
