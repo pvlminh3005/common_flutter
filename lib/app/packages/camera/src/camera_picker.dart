@@ -943,6 +943,7 @@ class _RecordItemBuilderState extends State<_RecordItemBuilder>
     with TickerProviderStateMixin {
   VideoPlayerController? _videoController;
   late AnimationController _recordingDurationController;
+  Timer? _maxDurationRecord;
 
   @override
   void initState() {
@@ -959,6 +960,7 @@ class _RecordItemBuilderState extends State<_RecordItemBuilder>
   @override
   void dispose() {
     _videoController?.dispose();
+    _maxDurationRecord?.cancel();
     super.dispose();
   }
 
@@ -974,6 +976,15 @@ class _RecordItemBuilderState extends State<_RecordItemBuilder>
         });
     }
     super.didUpdateWidget(oldWidget);
+  }
+
+  void timeoutMaxDurationRecord() {
+    _maxDurationRecord?.cancel();
+    _maxDurationRecord = Timer(widget.maximumRecordingDuration!, () {
+      if (widget.onStopButtonPressed != null) {
+        widget.onStopButtonPressed!();
+      }
+    });
   }
 
   @override
@@ -1010,14 +1021,16 @@ class _RecordItemBuilderState extends State<_RecordItemBuilder>
           ? () {
               if (widget.onStopButtonPressed != null) {
                 widget.onStopButtonPressed!();
-                _recordingDurationController.reset();
               }
+              _maxDurationRecord?.cancel();
             }
           : () {
               if (widget.onVideoRecordButtonPressed != null) {
                 widget.onVideoRecordButtonPressed!();
+                _recordingDurationController.reset();
                 _recordingDurationController.forward();
               }
+              timeoutMaxDurationRecord();
             },
       child: AnimatedSwitcher(
         duration: kTabScrollDuration,
