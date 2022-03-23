@@ -1,27 +1,19 @@
-import 'dart:async';
-import 'dart:io';
-import 'dart:math';
-import 'dart:ui';
-
-import 'package:camera/camera.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
-
-import '../camera.dart';
+part of camera_common;
 
 enum CameraType {
   camera,
   video,
 }
 
-T? _ambiguate<T>(T? value) => value;
-
 List<CameraDescription> cameras = <CameraDescription>[];
 
+extension RouterExt on BuildContext {
+  Future<dynamic> to(Widget widget) =>
+      Navigator.of(this).push(MaterialPageRoute(builder: (_) => widget));
+}
+
 // ignore: must_be_immutable
-class CameraCommon extends StatefulWidget {
+class CameraPicker extends StatefulWidget {
   final int cameraQuarterTurns;
   final bool enableRecording;
   final bool onlyEnableRecording;
@@ -35,7 +27,7 @@ class CameraCommon extends StatefulWidget {
   final ThemeData? theme;
   final ResolutionPreset resolutionPreset;
 
-  CameraCommon({
+  CameraPicker({
     Key? key,
     this.cameraQuarterTurns = 0,
     this.enableRecording = true,
@@ -52,12 +44,42 @@ class CameraCommon extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _CameraCommonState createState() {
-    return _CameraCommonState();
+  _CameraPickerState createState() {
+    return _CameraPickerState();
   }
 
-  static Future<void> initialCamera() async {
+  static Future<File?> pickCamera(
+    BuildContext context, {
+    int cameraQuarterTurns = 0,
+    bool enableRecording = false,
+    bool onlyEnableRecording = false,
+    bool enableAudio = false,
+    bool enableSetExposure = false,
+    bool enableExposureControl = false,
+    bool enablePinchToZoom = false,
+    bool enablePullToZoomInRecord = false,
+    bool shouldAutoPreviewVideo = false,
+    Duration? maximumRecordingDuration = const Duration(seconds: 15),
+    ResolutionPreset resolutionPreset = ResolutionPreset.max,
+  }) async {
     cameras = await availableCameras();
+    return Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => CameraPicker(
+          cameraQuarterTurns: cameraQuarterTurns,
+          enableRecording: enableRecording,
+          onlyEnableRecording: onlyEnableRecording,
+          enableAudio: enableAudio,
+          enableSetExposure: enableSetExposure,
+          enableExposureControl: enableExposureControl,
+          enablePinchToZoom: enablePinchToZoom,
+          enablePullToZoomInRecord: enablePullToZoomInRecord,
+          shouldAutoPreviewVideo: shouldAutoPreviewVideo,
+          maximumRecordingDuration: maximumRecordingDuration,
+          resolutionPreset: resolutionPreset,
+        ),
+      ),
+    );
   }
 }
 
@@ -83,7 +105,7 @@ void logError(String code, String? message) {
   }
 }
 
-class _CameraCommonState extends State<CameraCommon>
+class _CameraPickerState extends State<CameraPicker>
     with WidgetsBindingObserver, TickerProviderStateMixin {
   late CameraController controller;
   XFile? imageFile;
@@ -107,12 +129,16 @@ class _CameraCommonState extends State<CameraCommon>
   //* initial lens description camera
   int lensCamera = 0;
   double angle = 0.0;
+  FlashMode _flashMode = FlashMode.auto;
   bool flashOn = false;
+  bool _showChooseFlashMode = false;
+
   CameraType cameraType = CameraType.camera;
   bool isRecording = false;
   bool _showBlur = false;
   bool _showExposure = false;
   bool _showFocus = false;
+  Timer? _timer;
 
   //focus offset
   late Offset offsetTap = Offset.zero;
@@ -122,13 +148,13 @@ class _CameraCommonState extends State<CameraCommon>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance?.addObserver(this);
     if (widget.onlyEnableRecording) {
       cameraType = CameraType.video;
     }
 
     tabController = TabController(length: 2, vsync: this);
     onNewCameraSelected(cameras[lensCamera]);
-    _ambiguate(WidgetsBinding.instance)?.addObserver(this);
 
     _swapLensCameraAnimationController = AnimationController(
       duration: const Duration(milliseconds: 150),
@@ -158,10 +184,12 @@ class _CameraCommonState extends State<CameraCommon>
 
   @override
   void dispose() {
-    _ambiguate(WidgetsBinding.instance)?.removeObserver(this);
+    WidgetsBinding.instance?.removeObserver(this);
+    _timer?.cancel();
     _flashModeControlRowAnimationController.dispose();
     _exposureModeControlRowAnimationController.dispose();
     controller.dispose();
+    videoController?.dispose();
     super.dispose();
   }
 
@@ -179,6 +207,17 @@ class _CameraCommonState extends State<CameraCommon>
     } else if (state == AppLifecycleState.resumed) {
       onNewCameraSelected(cameraController.description);
     }
+  }
+
+  void _timeoutFocus() {
+    _timer?.cancel();
+    _timer = Timer(Duration(seconds: 2), () {
+      if (_pointers == 0) {
+        setState(() {
+          _showFocus = false;
+        });
+      }
+    });
   }
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -199,22 +238,47 @@ class _CameraCommonState extends State<CameraCommon>
                   Positioned(
                     top: 45,
                     right: 10,
-                    child: ScaleTransition(
-                      scale: _flashModeControlRowAnimationController,
-                      child: IconButton(
-                        onPressed: () {
-                          setState(() => flashOn = !flashOn);
-                          onSetFlashModeButtonPressed(
-                              flashOn ? FlashMode.torch : FlashMode.off);
-                        },
-                        icon: Icon(
-                          flashOn
-                              ? Icons.flash_on_rounded
-                              : Icons.flash_off_rounded,
-                          color: flashOn ? Colors.yellow : Colors.white,
-                          size: 30,
+                    child: Row(
+                      children: [
+                        AnimatedSwitcher(
+                          duration: kTabScrollDuration,
+                          child: _showChooseFlashMode
+                              ? Row(
+                                  children: [
+                                    _FlashModeTextItem(
+                                      title: 'Tự động',
+                                      isFlashType: _flashMode == FlashMode.auto,
+                                      onPressed: () =>
+                                          onSetFlashModeButtonPressed(
+                                              FlashMode.auto),
+                                    ),
+                                    _FlashModeTextItem(
+                                      title: 'Bật',
+                                      isFlashType:
+                                          _flashMode == FlashMode.torch,
+                                      onPressed: () =>
+                                          onSetFlashModeButtonPressed(
+                                              FlashMode.torch),
+                                    ),
+                                    _FlashModeTextItem(
+                                      title: 'Tắt',
+                                      isFlashType: _flashMode == FlashMode.off,
+                                      onPressed: () =>
+                                          onSetFlashModeButtonPressed(
+                                              FlashMode.off),
+                                    ),
+                                  ],
+                                )
+                              : const SizedBox.shrink(),
                         ),
-                      ),
+                        ScaleTransition(
+                          scale: _flashModeControlRowAnimationController,
+                          child: IconButton(
+                            onPressed: toggleFlashIcon,
+                            icon: _buildFlashItem(),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   _FocusOffsetBuilder(
@@ -240,7 +304,6 @@ class _CameraCommonState extends State<CameraCommon>
                 ],
               ),
             ),
-            // const Spacer(),
             if (!widget.onlyEnableRecording && widget.enableRecording)
               _TabBarBuilder(
                 tabController: tabController,
@@ -253,7 +316,6 @@ class _CameraCommonState extends State<CameraCommon>
                   setState(() => _showBlur = false);
                 },
               ),
-
             _bottomBuilder(),
           ],
         ),
@@ -261,26 +323,16 @@ class _CameraCommonState extends State<CameraCommon>
     );
   }
 
-  Widget _focusBuilder() {
-    return Stack(
-      children: [
-        Positioned(
-          top: offsetTap.dy,
-          left: offsetTap.dx,
-          child: _showFocus
-              ? ScaleTransition(
-                  scale: _focusModeControlRowAnimationController,
-                  child: GestureDetector(
-                    child: Image.asset(
-                      'assets/images/frame.png',
-                      color: Colors.yellow,
-                    ),
-                  ),
-                )
-              : const SizedBox.shrink(),
-        ),
-      ],
-    );
+  Widget _buildFlashItem() {
+    switch (_flashMode) {
+      case FlashMode.auto:
+        return _FlashModeIconItem(icon: Icons.flash_auto_rounded);
+      case FlashMode.torch:
+        return _FlashModeIconItem(
+            icon: Icons.flash_on_outlined, color: Colors.yellow);
+      default:
+        return _FlashModeIconItem(icon: Icons.flash_off_rounded);
+    }
   }
 
   Widget _bottomBuilder() {
@@ -293,23 +345,17 @@ class _CameraCommonState extends State<CameraCommon>
               childRight: _IconButtonBuilder(
                 controller,
                 swapLensController: _swapLensCameraAnimationController,
-                onPressedRecord: controller.value.isRecordingPaused
-                    ? onResumeButtonPressed
-                    : onPauseButtonPressed,
                 onPressSwapLens: swapLensCamera,
               ),
             )
           : _RecordItemBuilder(
-              videoController: videoController,
               shouldAutoPreviewVideo: widget.shouldAutoPreviewVideo,
               videoFile: videoFile,
-              isRecording: controller.value.isRecordingVideo,
+              isRecording: isRecording,
+              maximumRecordingDuration: widget.maximumRecordingDuration,
               childRight: _IconButtonBuilder(
                 controller,
                 swapLensController: _swapLensCameraAnimationController,
-                onPressedRecord: controller.value.isRecordingPaused
-                    ? onResumeButtonPressed
-                    : onPauseButtonPressed,
                 onPressSwapLens: swapLensCamera,
               ),
               onStopButtonPressed: onStopButtonPressed,
@@ -318,9 +364,18 @@ class _CameraCommonState extends State<CameraCommon>
     );
   }
 
+  void toggleFlashIcon() {
+    _flashModeControlRowAnimationController
+        .forward()
+        .then((value) => _flashModeControlRowAnimationController.reverse());
+    setState(() {
+      _showChooseFlashMode = !_showChooseFlashMode;
+    });
+  }
+
   void _flip() {
     setState(() {
-      angle = (angle + pi) % (2 * pi);
+      angle = (angle + math.pi) % (2 * math.pi);
     });
   }
 
@@ -358,13 +413,7 @@ class _CameraCommonState extends State<CameraCommon>
             onTapDown: (TapDownDetails details) =>
                 onViewFinderTap(details, constraints),
             onTapUp: (TapUpDetails details) {
-              Timer(Duration(seconds: 2), () {
-                if (_pointers == 0) {
-                  setState(() {
-                    _showFocus = false;
-                  });
-                }
-              });
+              _timeoutFocus();
             },
           );
         }),
@@ -403,11 +452,15 @@ class _CameraCommonState extends State<CameraCommon>
 
   void showInSnackBar(String message) {
     // ignore: deprecated_member_use
-    _scaffoldKey.currentState?.showSnackBar(SnackBar(content: Text(message)));
+    // _scaffoldKey.currentState?.showSnackBar(SnackBar(content: Text(message)));
   }
 
   void onViewFinderTap(
       TapDownDetails details, BoxConstraints constraints) async {
+    if (_showChooseFlashMode) {
+      return toggleFlashIcon();
+    }
+
     if (_pointers == 2) {
       return;
     }
@@ -484,6 +537,7 @@ class _CameraCommonState extends State<CameraCommon>
       if (mounted) {
         setState(() {
           imageFile = file;
+          _reviewCamera(context, file!);
           videoController?.dispose();
           videoController = null;
         });
@@ -550,11 +604,11 @@ class _CameraCommonState extends State<CameraCommon>
 
   void onSetFlashModeButtonPressed(FlashMode mode) {
     setFlashMode(mode).then((_) {
-      _flashModeControlRowAnimationController
-          .forward()
-          .then((value) => _flashModeControlRowAnimationController.reverse());
       if (mounted) {
-        setState(() {});
+        setState(() {
+          _flashMode = mode;
+          _showChooseFlashMode = false;
+        });
       }
       // showInSnackBar('Flash mode set to ${mode.toString().split('.').last}');
     });
@@ -579,23 +633,24 @@ class _CameraCommonState extends State<CameraCommon>
   }
 
   void onVideoRecordButtonPressed() {
-    startVideoRecording().then((_) {
-      if (mounted) {
-        isRecording = true;
-        setState(() {});
-      }
+    setState(() {
+      isRecording = true;
     });
+    startVideoRecording().then((_) {});
   }
 
   void onStopButtonPressed() {
+    setState(() {
+      isRecording = false;
+    });
+
     stopVideoRecording().then((XFile? file) {
-      if (mounted) {
-        setState(() {});
-      }
       if (file != null) {
         showInSnackBar('Video recorded to ${file.path}');
         videoFile = file;
-        _startVideoPlayer();
+        _reviewCamera(context, file, isVideo: true);
+        videoController?.dispose();
+        videoController = null;
       }
     });
   }
@@ -741,37 +796,6 @@ class _CameraCommonState extends State<CameraCommon>
     }
   }
 
-  Future<void> _startVideoPlayer() async {
-    if (videoFile == null) {
-      return;
-    }
-
-    final VideoPlayerController vController = kIsWeb
-        ? VideoPlayerController.network(videoFile!.path)
-        : VideoPlayerController.file(File(videoFile!.path));
-
-    videoPlayerListener = () {
-      if (videoController != null) {
-        // Refreshing the state to update video player with the correct ratio.
-        if (mounted) {
-          setState(() {});
-        }
-        videoController!.removeListener(videoPlayerListener!);
-      }
-    };
-    vController.addListener(videoPlayerListener!);
-    await vController.setLooping(true);
-    await vController.initialize();
-    await videoController?.dispose();
-    if (mounted) {
-      setState(() {
-        imageFile = null;
-        videoController = vController;
-      });
-    }
-    await vController.play();
-  }
-
   Future<XFile?> takePicture() async {
     final CameraController? cameraController = controller;
     if (cameraController == null || !cameraController.value.isInitialized) {
@@ -796,6 +820,53 @@ class _CameraCommonState extends State<CameraCommon>
   void _showCameraException(CameraException e) {
     logError(e.code, e.description);
     showInSnackBar('Error: ${e.code}\n${e.description}');
+  }
+}
+
+class _FlashModeTextItem extends StatelessWidget {
+  final VoidCallback? onPressed;
+  final String title;
+  final bool isFlashType;
+
+  const _FlashModeTextItem({
+    this.onPressed,
+    this.title = '',
+    this.isFlashType = false,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      onPressed: onPressed,
+      child: Text(
+        title,
+        style: TextStyle(
+          color: isFlashType ? Colors.blue : Colors.white,
+          fontWeight: isFlashType ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+    );
+  }
+}
+
+class _FlashModeIconItem extends StatelessWidget {
+  final IconData? icon;
+  final Color color;
+
+  const _FlashModeIconItem({
+    this.icon,
+    this.color = Colors.white,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+      icon,
+      color: color,
+      size: 30,
+    );
   }
 }
 
@@ -829,28 +900,14 @@ class _CameraItemBuilder extends StatelessWidget {
           onTap: imageFile == null
               ? null
               : () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => CacheImageCustom(imageFile!.path),
-                    ),
-                  );
+                  _reviewCamera(context, imageFile!);
                 },
         ),
-        InkWell(
+        _CustomMainButton(
           onTap: onTakePictureButtonPressed,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(50),
-              border: Border.all(
-                color: Colors.white,
-                width: 5.0,
-              ),
-            ),
-            position: DecorationPosition.foreground,
-            child: CircleAvatar(
-              radius: 35,
-              backgroundColor: Colors.transparent,
-            ),
+          child: CircleAvatar(
+            radius: 35,
+            backgroundColor: Colors.transparent,
           ),
         ),
         childRight ?? const SizedBox(),
@@ -859,104 +916,154 @@ class _CameraItemBuilder extends StatelessWidget {
   }
 }
 
-class _RecordItemBuilder extends StatelessWidget {
-  final VideoPlayerController? videoController;
+class _RecordItemBuilder extends StatefulWidget {
   final bool shouldAutoPreviewVideo;
   final XFile? videoFile;
   final Widget? childRight;
   final bool isRecording;
   final VoidCallback? onStopButtonPressed, onVideoRecordButtonPressed;
+  final Duration? maximumRecordingDuration;
 
   const _RecordItemBuilder({
-    this.videoController,
     this.shouldAutoPreviewVideo = false,
     this.videoFile,
     this.childRight,
     this.isRecording = false,
     this.onStopButtonPressed,
     this.onVideoRecordButtonPressed,
+    this.maximumRecordingDuration = const Duration(seconds: 15),
     Key? key,
   }) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    if (videoController != null && !shouldAutoPreviewVideo) {
-      videoController!.pause();
+  State<_RecordItemBuilder> createState() => _RecordItemBuilderState();
+}
+
+class _RecordItemBuilderState extends State<_RecordItemBuilder>
+    with TickerProviderStateMixin {
+  VideoPlayerController? _videoController;
+  late AnimationController _recordingDurationController;
+
+  @override
+  void initState() {
+    _recordingDurationController = AnimationController(
+      duration: widget.maximumRecordingDuration,
+      vsync: this,
+    )..addListener(() {
+        setState(() {});
+      });
+
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _videoController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _RecordItemBuilder oldWidget) {
+    if (widget.videoFile != oldWidget.videoFile) {
+      _videoController = VideoPlayerController.file(
+        File(widget.videoFile!.path),
+      )
+        ..initialize()
+        ..addListener(() {
+          setState(() {});
+        });
     }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       children: [
         InkWell(
-          child: Hero(
-            tag: videoFile?.path ?? '',
-            child: CircleAvatar(
-              radius: 25,
-              backgroundColor: Colors.black54,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(50),
-                child: videoController == null
-                    ? const SizedBox.shrink()
-                    : VideoPlayer(videoController!),
-              ),
+          child: CircleAvatar(
+            radius: 25,
+            backgroundColor: Colors.black54,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(50),
+              child: _videoController == null
+                  ? const SizedBox.shrink()
+                  : VideoPlayer(_videoController!),
             ),
           ),
-          onTap: videoFile == null
+          onTap: widget.videoFile == null
               ? null
               : () {
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => CacheVideoCustom(videoController!),
-                  ));
+                  _reviewCamera(context, widget.videoFile!, isVideo: true);
                 },
         ),
         _buttonRecordBuilder(),
-        childRight ?? const SizedBox(),
+        widget.childRight ?? const SizedBox(),
       ],
     );
   }
 
   Widget _buttonRecordBuilder() {
-    if (isRecording) {
-      return InkWell(
-        onTap: onStopButtonPressed,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(50),
-            border: Border.all(
-              color: Colors.white,
-              width: 5.0,
-            ),
-          ),
-          position: DecorationPosition.foreground,
-          child: CircleAvatar(
-            radius: 35,
-            backgroundColor: Colors.transparent,
-            child: Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: const Color(0xFFDD4A30),
-                borderRadius: BorderRadius.circular(5.0),
+    return _CustomMainButton(
+      onTap: widget.isRecording
+          ? () {
+              if (widget.onStopButtonPressed != null) {
+                widget.onStopButtonPressed!();
+                _recordingDurationController.reset();
+              }
+            }
+          : () {
+              if (widget.onVideoRecordButtonPressed != null) {
+                widget.onVideoRecordButtonPressed!();
+                _recordingDurationController.forward();
+              }
+            },
+      child: AnimatedSwitcher(
+        duration: kTabScrollDuration,
+        child: widget.isRecording
+            ? Stack(
+                alignment: Alignment.center,
+                children: [
+                  CircleAvatar(
+                    radius: 35,
+                    backgroundColor: Colors.transparent,
+                  ),
+                  _buildCircular(),
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFDD4A30),
+                      borderRadius: BorderRadius.circular(5.0),
+                    ),
+                  ),
+                  _buildCircular(
+                    value: _recordingDurationController.value,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+                  ),
+                ],
+              )
+            : CircleAvatar(
+                radius: 35,
+                backgroundColor: const Color(0xFFDD4A30),
               ),
-            ),
-          ),
-        ),
-      );
-    }
-    return InkWell(
-      onTap: onVideoRecordButtonPressed,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(50),
-          border: Border.all(
-            color: Colors.white,
-            width: 5.0,
-          ),
-        ),
-        position: DecorationPosition.foreground,
-        child: CircleAvatar(
-          radius: 35,
-          backgroundColor: const Color(0xFFDD4A30),
-        ),
+      ),
+    );
+  }
+
+  Widget _buildCircular({
+    double value = 1,
+    Animation<Color?> valueColor =
+        const AlwaysStoppedAnimation<Color>(Colors.transparent),
+  }) {
+    return SizedBox(
+      width: 55.0,
+      height: 55.0,
+      child: CircularProgressIndicator(
+        value: value,
+        valueColor: valueColor,
+        strokeWidth: 5.0,
       ),
     );
   }
@@ -987,7 +1094,7 @@ class _ExposureOffsetBuilder extends StatelessWidget {
       top: MediaQuery.of(context).size.height / 2.5,
       right: -30,
       child: Transform.rotate(
-        angle: -pi / 2,
+        angle: -math.pi / 2,
         child: AnimatedSwitcher(
           duration: Duration(milliseconds: 400),
           child: showExposure
@@ -1075,12 +1182,11 @@ class _FocusOffsetBuilder extends StatelessWidget {
 class _IconButtonBuilder extends StatelessWidget {
   final CameraController controller;
   final AnimationController? swapLensController;
-  final VoidCallback? onPressedRecord, onPressSwapLens;
+  final VoidCallback? onPressSwapLens;
 
   const _IconButtonBuilder(
     this.controller, {
     this.swapLensController,
-    this.onPressedRecord,
     this.onPressSwapLens,
     Key? key,
   }) : super(key: key);
@@ -1095,23 +1201,16 @@ class _IconButtonBuilder extends StatelessWidget {
       ),
       onPressed: onPressSwapLens,
     );
-    if (controller.value.isRecordingVideo) {
-      return IconButton(
-        iconSize: 32,
-        icon: Icon(
-          controller.value.isRecordingPaused
-              ? CupertinoIcons.play_circle
-              : CupertinoIcons.pause_circle,
-          color: Colors.white.withOpacity(.7),
-        ),
-        onPressed: onPressedRecord,
-      );
-    } else {
-      if (swapLensController == null) {
-        return child;
-      }
-      return ScaleTransition(scale: swapLensController!, child: child);
+    if (swapLensController == null) {
+      return child;
     }
+    return IgnorePointer(
+      ignoring: controller.value.isRecordingVideo,
+      child: ScaleTransition(
+        scale: swapLensController!,
+        child: child,
+      ),
+    );
   }
 }
 
@@ -1168,4 +1267,46 @@ class _TabBarBuilder extends StatelessWidget {
       onTap: onTap,
     );
   }
+}
+
+class _CustomMainButton extends StatelessWidget {
+  final VoidCallback? onTap;
+  final Widget? child;
+
+  const _CustomMainButton({
+    this.onTap,
+    this.child,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      shape: CircleBorder(),
+      clipBehavior: Clip.hardEdge,
+      child: InkWell(
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(50),
+            border: Border.all(
+              color: Colors.white,
+              width: 5.0,
+            ),
+          ),
+          position: DecorationPosition.foreground,
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+void _reviewCamera(BuildContext context, XFile file, {bool isVideo = false}) {
+  context.to(CameraReviewBuilder(file: file, isVideo: isVideo)).then((value) {
+    if (value != null) {
+      Navigator.pop(context, File(file.path));
+    }
+  });
 }

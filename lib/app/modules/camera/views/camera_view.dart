@@ -1,9 +1,9 @@
-import 'package:custom_common/app/packages/camera/src/camera_view.dart';
+import '/app/modules/camera/controllers/camera_controller.dart';
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
-import '../controllers/camera_controller.dart';
+import '../../../packages/camera/camera.dart';
 
 class CameraView extends GetView<CameraController> {
   @override
@@ -18,18 +18,15 @@ class CameraView extends GetView<CameraController> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                      builder: (_) => CameraCommon(
-                            // onlyEnableRecording: true,
-                            // enablePinchToZoom: true,
-                            // shouldAutoPreviewVideo: true,
-                            // enableRecording: true,
-                            enableSetExposure: false,
-                          )),
-                  // MaterialPageRoute(builder: (_) => CameraExampleHome()),
-                );
+              onPressed: () async {
+                await CameraPicker.pickCamera(
+                  context,
+                  enableSetExposure: true,
+                  enableRecording: true,
+                  enablePinchToZoom: true,
+                ).then((value) {
+                  Get.log('$value');
+                });
               },
               child: Text(
                 'Open Camera Picker',

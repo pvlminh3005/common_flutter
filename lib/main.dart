@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
-
-import 'app/packages/camera/camera.dart';
 import 'app/routes/app_pages.dart';
 
 void main() async {
-  await initializeApp();
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     GetMaterialApp(
       title: "Application",
@@ -19,9 +17,4 @@ void main() async {
       ),
     ),
   );
-}
-
-Future<void> initializeApp() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await CameraCommon.initialCamera();
 }
