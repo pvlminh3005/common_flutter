@@ -48,6 +48,10 @@ class _BottomNavigatorCustom extends StatelessWidget {
               icon: CupertinoIcons.square_fill_on_square_fill,
             ),
             _itemBuilder(
+              title: 'Map',
+              icon: CupertinoIcons.map_fill,
+            ),
+            _itemBuilder(
               title: 'WebView',
               icon: Icons.web,
             ),

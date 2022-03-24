@@ -1,4 +1,5 @@
 import 'package:custom_common/app/modules/camera/views/camera_view.dart';
+import 'package:custom_common/app/modules/map_location/views/map_location_view.dart';
 import 'package:custom_common/app/modules/media/views/media_view.dart';
 import 'package:custom_common/app/modules/profile/views/profile_view.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ class DashboardController extends GetxController
     HomeView(),
     CameraView(),
     MediaView(),
+    MapLocationView(),
     WebviewView(),
     ProfileView(),
   ];

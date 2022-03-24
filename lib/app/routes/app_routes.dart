@@ -9,6 +9,7 @@ abstract class Routes {
   static const CAMERA = _Paths.CAMERA;
   static const WEBVIEW = _Paths.WEBVIEW;
   static const PROFILE = _Paths.PROFILE;
+  static const MAP_LOCATION = _Paths.MAP_LOCATION;
 }
 
 abstract class _Paths {
@@ -19,4 +20,5 @@ abstract class _Paths {
   static const CAMERA = '/camera';
   static const WEBVIEW = '/webview';
   static const PROFILE = '/profile';
+  static const MAP_LOCATION = '/map-location';
 }
