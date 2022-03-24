@@ -1,10 +1,4 @@
-import 'dart:async';
-import 'dart:io';
-
-import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
-
-import '../../widgets/camera.dart';
+part of camera_common;
 
 class CameraReviewBuilder extends StatefulWidget {
   final XFile file;
