@@ -130,15 +130,22 @@ class _CameraPickerState extends State<CameraPicker>
   int lensCamera = 0;
   double angle = 0.0;
   FlashMode _flashMode = FlashMode.auto;
-  bool flashOn = false;
-  bool _showChooseFlashMode = false;
+
+  final flashOn = ValueNotifier<bool>(false);
+  final _showChooseFlashMode = ValueNotifier<bool>(false);
+  final isRecording = ValueNotifier<bool>(false);
+  final _showBlur = ValueNotifier<bool>(false);
+  final _showExposure = ValueNotifier<bool>(false);
+  final _showFocus = ValueNotifier<bool>(false);
+  final _cameraType = ValueNotifier<CameraType>(CameraType.camera);
+  final _secondsRecord = ValueNotifier<int>(0);
+  final _minutesRecord = ValueNotifier<int>(0);
+  final _hoursRecord = ValueNotifier<int>(0);
 
   CameraType cameraType = CameraType.camera;
-  bool isRecording = false;
-  bool _showBlur = false;
-  bool _showExposure = false;
-  bool _showFocus = false;
   Timer? _timer;
+  Timer? _timerExposure;
+  Timer? _timerCountRecord;
 
   //focus offset
   late Offset offsetTap = Offset.zero;
@@ -186,6 +193,9 @@ class _CameraPickerState extends State<CameraPicker>
   void dispose() {
     WidgetsBinding.instance?.removeObserver(this);
     _timer?.cancel();
+    _timerExposure?.cancel();
+    _timerCountRecord?.cancel();
+
     _flashModeControlRowAnimationController.dispose();
     _exposureModeControlRowAnimationController.dispose();
     controller.dispose();
@@ -213,9 +223,9 @@ class _CameraPickerState extends State<CameraPicker>
     _timer?.cancel();
     _timer = Timer(Duration(seconds: 2), () {
       if (_pointers == 0) {
-        setState(() {
-          _showFocus = false;
-        });
+        _showChooseFlashMode.value = false;
+        _showExposure.value = false;
+        _showFocus.value = false;
       }
     });
   }
@@ -240,37 +250,43 @@ class _CameraPickerState extends State<CameraPicker>
                     right: 10,
                     child: Row(
                       children: [
-                        AnimatedSwitcher(
-                          duration: kTabScrollDuration,
-                          child: _showChooseFlashMode
-                              ? Row(
-                                  children: [
-                                    _FlashModeTextItem(
-                                      title: 'Tự động',
-                                      isFlashType: _flashMode == FlashMode.auto,
-                                      onPressed: () =>
-                                          onSetFlashModeButtonPressed(
-                                              FlashMode.auto),
-                                    ),
-                                    _FlashModeTextItem(
-                                      title: 'Bật',
-                                      isFlashType:
-                                          _flashMode == FlashMode.torch,
-                                      onPressed: () =>
-                                          onSetFlashModeButtonPressed(
-                                              FlashMode.torch),
-                                    ),
-                                    _FlashModeTextItem(
-                                      title: 'Tắt',
-                                      isFlashType: _flashMode == FlashMode.off,
-                                      onPressed: () =>
-                                          onSetFlashModeButtonPressed(
-                                              FlashMode.off),
-                                    ),
-                                  ],
-                                )
-                              : const SizedBox.shrink(),
-                        ),
+                        ValueListenableBuilder(
+                            valueListenable: _showChooseFlashMode,
+                            builder: (context, bool value, child) {
+                              return AnimatedSwitcher(
+                                duration: kTabScrollDuration,
+                                child: value
+                                    ? Row(
+                                        children: [
+                                          _FlashModeTextItem(
+                                            title: 'Tự động',
+                                            isFlashType:
+                                                _flashMode == FlashMode.auto,
+                                            onPressed: () =>
+                                                onSetFlashModeButtonPressed(
+                                                    FlashMode.auto),
+                                          ),
+                                          _FlashModeTextItem(
+                                            title: 'Bật',
+                                            isFlashType:
+                                                _flashMode == FlashMode.torch,
+                                            onPressed: () =>
+                                                onSetFlashModeButtonPressed(
+                                                    FlashMode.torch),
+                                          ),
+                                          _FlashModeTextItem(
+                                            title: 'Tắt',
+                                            isFlashType:
+                                                _flashMode == FlashMode.off,
+                                            onPressed: () =>
+                                                onSetFlashModeButtonPressed(
+                                                    FlashMode.off),
+                                          ),
+                                        ],
+                                      )
+                                    : const SizedBox.shrink(),
+                              );
+                            }),
                         ScaleTransition(
                           scale: _flashModeControlRowAnimationController,
                           child: IconButton(
@@ -285,22 +301,22 @@ class _CameraPickerState extends State<CameraPicker>
                     offset: offsetTap,
                     focusModeController:
                         _focusModeControlRowAnimationController,
-                    showFocus: _showFocus,
+                    focusNotifier: _showFocus,
                   ),
                   _ExposureOffsetBuilder(
                     onPointerDown: (_) => _pointers++,
                     onPointerUp: (_) {
                       _pointers--;
                       _pointers = _pointers < 0 ? 0 : _pointers;
-                      timOutShowFocusMode();
+                      _timeoutFocus();
                     },
-                    showExposure: _showExposure,
+                    exposureNotifier: _showExposure,
                     onChanged: setExposureOffset,
                     currentExposureOffset: _currentExposureOffset,
                     minAvailableExposureOffset: _minAvailableExposureOffset,
                     maxAvailableExposureOffset: _maxAvailableExposureOffset,
                   ),
-                  _BlurSwitcherBuilder(showBlur: _showBlur),
+                  _BlurSwitcherBuilder(blurNotifier: _showBlur),
                 ],
               ),
             ),
@@ -308,12 +324,12 @@ class _CameraPickerState extends State<CameraPicker>
               _TabBarBuilder(
                 tabController: tabController,
                 onTap: (index) async {
+                  _showBlur.value = true;
                   setState(() {
-                    _showBlur = true;
                     cameraType = CameraType.values[index];
                   });
-                  await Future.delayed(Duration(milliseconds: 400));
-                  setState(() => _showBlur = false);
+                  Future.delayed(kTabScrollDuration)
+                      .then((_) => _showBlur.value = false);
                 },
               ),
             _bottomBuilder(),
@@ -351,7 +367,7 @@ class _CameraPickerState extends State<CameraPicker>
           : _RecordItemBuilder(
               shouldAutoPreviewVideo: widget.shouldAutoPreviewVideo,
               videoFile: videoFile,
-              isRecording: isRecording,
+              recordNotifier: isRecording,
               maximumRecordingDuration: widget.maximumRecordingDuration,
               childRight: _IconButtonBuilder(
                 controller,
@@ -364,13 +380,20 @@ class _CameraPickerState extends State<CameraPicker>
     );
   }
 
+  void setCounterTimeRecord() {
+    const oneSec = const Duration(seconds: 1);
+    _timerCountRecord = Timer.periodic(oneSec, (timer) {
+      _secondsRecord.value++;
+      if (_secondsRecord.value >= 60) {}
+    });
+  }
+
   void toggleFlashIcon() {
+    _showChooseFlashMode.value = !_showChooseFlashMode.value;
+
     _flashModeControlRowAnimationController
         .forward()
         .then((value) => _flashModeControlRowAnimationController.reverse());
-    setState(() {
-      _showChooseFlashMode = !_showChooseFlashMode;
-    });
   }
 
   void _flip() {
@@ -406,10 +429,10 @@ class _CameraPickerState extends State<CameraPicker>
             onScaleUpdate: _handleScaleUpdate,
             onLongPress: () {
               if (widget.enableSetExposure) {
-                setState(() => _showExposure = true);
+                _showExposure.value = true;
               }
             },
-            onLongPressMoveUpdate: (value) => timOutShowFocusMode(),
+            onLongPressMoveUpdate: (_) => _timeoutFocus(),
             onTapDown: (TapDownDetails details) =>
                 onViewFinderTap(details, constraints),
             onTapUp: (TapUpDetails details) {
@@ -419,17 +442,6 @@ class _CameraPickerState extends State<CameraPicker>
         }),
       ),
     );
-  }
-
-  void timOutShowFocusMode() {
-    Timer(Duration(seconds: 3), () {
-      if (_pointers == 0) {
-        setState(() {
-          _showExposure = false;
-          _showFocus = false;
-        });
-      }
-    });
   }
 
   void _handleScaleStart(ScaleStartDetails details) {
@@ -457,13 +469,16 @@ class _CameraPickerState extends State<CameraPicker>
 
   void onViewFinderTap(
       TapDownDetails details, BoxConstraints constraints) async {
-    if (_showChooseFlashMode) {
+    if (_showChooseFlashMode.value) {
       return toggleFlashIcon();
     }
 
     if (_pointers == 2) {
       return;
     }
+
+    _showFocus.value = true;
+
     final CameraController cameraController = controller;
 
     final offset = Offset(
@@ -475,7 +490,6 @@ class _CameraPickerState extends State<CameraPicker>
         Offset(details.localPosition.dx - 55, details.localPosition.dy - 55);
 
     setState(() {
-      _showFocus = true;
       offsetTap = getOffset;
     });
 
@@ -605,9 +619,9 @@ class _CameraPickerState extends State<CameraPicker>
   void onSetFlashModeButtonPressed(FlashMode mode) {
     setFlashMode(mode).then((_) {
       if (mounted) {
+        _showChooseFlashMode.value = false;
         setState(() {
           _flashMode = mode;
-          _showChooseFlashMode = false;
         });
       }
       // showInSnackBar('Flash mode set to ${mode.toString().split('.').last}');
@@ -633,16 +647,14 @@ class _CameraPickerState extends State<CameraPicker>
   }
 
   void onVideoRecordButtonPressed() {
-    setState(() {
-      isRecording = true;
-    });
-    startVideoRecording().then((_) {});
+    isRecording.value = true;
+    startVideoRecording();
   }
 
-  void onStopButtonPressed() {
-    setState(() {
-      isRecording = false;
-    });
+  void onStopButtonPressed() async {
+    isRecording.value = false;
+
+    await Future.delayed(Duration(milliseconds: 500));
 
     stopVideoRecording().then((XFile? file) {
       if (file != null) {
@@ -704,7 +716,7 @@ class _CameraPickerState extends State<CameraPicker>
     }
 
     try {
-      await controller.startVideoRecording();
+      controller.startVideoRecording();
     } on CameraException catch (e) {
       _showCameraException(e);
       return;
@@ -775,8 +787,8 @@ class _CameraPickerState extends State<CameraPicker>
   }
 
   Future<void> setExposureOffset(double offset) async {
+    _showFocus.value = false;
     setState(() {
-      _showFocus = false;
       _currentExposureOffset = offset;
     });
     try {
@@ -920,7 +932,7 @@ class _RecordItemBuilder extends StatefulWidget {
   final bool shouldAutoPreviewVideo;
   final XFile? videoFile;
   final Widget? childRight;
-  final bool isRecording;
+  final ValueNotifier<bool>? recordNotifier;
   final VoidCallback? onStopButtonPressed, onVideoRecordButtonPressed;
   final Duration? maximumRecordingDuration;
 
@@ -928,7 +940,7 @@ class _RecordItemBuilder extends StatefulWidget {
     this.shouldAutoPreviewVideo = false,
     this.videoFile,
     this.childRight,
-    this.isRecording = false,
+    this.recordNotifier,
     this.onStopButtonPressed,
     this.onVideoRecordButtonPressed,
     this.maximumRecordingDuration = const Duration(seconds: 15),
@@ -1016,53 +1028,61 @@ class _RecordItemBuilderState extends State<_RecordItemBuilder>
   }
 
   Widget _buttonRecordBuilder() {
-    return _CustomMainButton(
-      onTap: widget.isRecording
-          ? () {
-              if (widget.onStopButtonPressed != null) {
-                widget.onStopButtonPressed!();
-              }
-              _maxDurationRecord?.cancel();
-            }
-          : () {
-              if (widget.onVideoRecordButtonPressed != null) {
-                widget.onVideoRecordButtonPressed!();
-                _recordingDurationController.reset();
-                _recordingDurationController.forward();
-              }
-              timeoutMaxDurationRecord();
-            },
-      child: AnimatedSwitcher(
-        duration: kTabScrollDuration,
-        child: widget.isRecording
-            ? Stack(
-                alignment: Alignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 35,
-                    backgroundColor: Colors.transparent,
-                  ),
-                  _buildCircular(),
-                  Container(
-                    width: 30,
-                    height: 30,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDD4A30),
-                      borderRadius: BorderRadius.circular(5.0),
+    if (widget.recordNotifier == null) return const SizedBox.shrink();
+    return ValueListenableBuilder(
+        valueListenable: widget.recordNotifier!,
+        builder: (context, bool value, child) {
+          return _CustomMainButton(
+            onTap: value
+                ? () {
+                    _recordingDurationController.reset();
+
+                    if (widget.onStopButtonPressed != null) {
+                      widget.onStopButtonPressed!();
+                    }
+                    _maxDurationRecord?.cancel();
+                  }
+                : () {
+                    _recordingDurationController.forward();
+
+                    if (widget.onVideoRecordButtonPressed != null) {
+                      widget.onVideoRecordButtonPressed!();
+                    }
+                    timeoutMaxDurationRecord();
+                  },
+            child: AnimatedSwitcher(
+              duration: kTabScrollDuration,
+              child: value
+                  ? Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        CircleAvatar(
+                          radius: 35,
+                          backgroundColor: Colors.transparent,
+                        ),
+                        _buildCircular(),
+                        Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDD4A30),
+                            borderRadius: BorderRadius.circular(5.0),
+                          ),
+                        ),
+                        _buildCircular(
+                          value: _recordingDurationController.value,
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.blue),
+                        ),
+                      ],
+                    )
+                  : CircleAvatar(
+                      radius: 35,
+                      backgroundColor: const Color(0xFFDD4A30),
                     ),
-                  ),
-                  _buildCircular(
-                    value: _recordingDurationController.value,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                  ),
-                ],
-              )
-            : CircleAvatar(
-                radius: 35,
-                backgroundColor: const Color(0xFFDD4A30),
-              ),
-      ),
-    );
+            ),
+          );
+        });
   }
 
   Widget _buildCircular({
@@ -1083,7 +1103,7 @@ class _RecordItemBuilderState extends State<_RecordItemBuilder>
 }
 
 class _ExposureOffsetBuilder extends StatelessWidget {
-  final bool showExposure;
+  final ValueNotifier<bool>? exposureNotifier;
   final double currentExposureOffset,
       minAvailableExposureOffset,
       maxAvailableExposureOffset;
@@ -1091,7 +1111,7 @@ class _ExposureOffsetBuilder extends StatelessWidget {
   final Function(dynamic)? onPointerDown, onPointerUp;
 
   const _ExposureOffsetBuilder({
-    this.showExposure = false,
+    this.exposureNotifier,
     this.currentExposureOffset = 0.0,
     this.minAvailableExposureOffset = 0.0,
     this.maxAvailableExposureOffset = 0.0,
@@ -1103,55 +1123,62 @@ class _ExposureOffsetBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (exposureNotifier == null) return const SizedBox.shrink();
     return Positioned(
       top: MediaQuery.of(context).size.height / 2.5,
       right: -30,
       child: Transform.rotate(
         angle: -math.pi / 2,
-        child: AnimatedSwitcher(
-          duration: Duration(milliseconds: 400),
-          child: showExposure
-              ? Listener(
-                  onPointerDown: onPointerDown,
-                  onPointerUp: onPointerUp,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.yellow, width: .5),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(10.0),
-                          child: Icon(
-                            Icons.wb_sunny_rounded,
-                            color: Colors.yellow,
-                            size: 30,
+        child: ValueListenableBuilder(
+          valueListenable: exposureNotifier!,
+          builder: (context, bool value, child) {
+            return AnimatedSwitcher(
+              duration: Duration(milliseconds: 400),
+              child: value
+                  ? Listener(
+                      onPointerDown: onPointerDown,
+                      onPointerUp: onPointerUp,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              border:
+                                  Border.all(color: Colors.yellow, width: .5),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(10.0),
+                              child: Icon(
+                                Icons.wb_sunny_rounded,
+                                color: Colors.yellow,
+                                size: 30,
+                              ),
+                            ),
                           ),
-                        ),
+                          SliderTheme(
+                            data: SliderTheme.of(context).copyWith(
+                              thumbColor: Colors.yellow,
+                              thumbShape: RoundSliderThumbShape(
+                                  enabledThumbRadius: 5.0),
+                              activeTickMarkColor: Colors.yellow,
+                              inactiveTickMarkColor: Colors.grey,
+                              activeTrackColor: Colors.transparent,
+                              inactiveTrackColor: Colors.transparent,
+                            ),
+                            child: Slider(
+                              value: currentExposureOffset,
+                              min: minAvailableExposureOffset,
+                              max: maxAvailableExposureOffset,
+                              divisions: 8,
+                              onChanged: onChanged,
+                            ),
+                          ),
+                        ],
                       ),
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          thumbColor: Colors.yellow,
-                          thumbShape:
-                              RoundSliderThumbShape(enabledThumbRadius: 5.0),
-                          activeTickMarkColor: Colors.yellow,
-                          inactiveTickMarkColor: Colors.grey,
-                          activeTrackColor: Colors.transparent,
-                          inactiveTrackColor: Colors.transparent,
-                        ),
-                        child: Slider(
-                          value: currentExposureOffset,
-                          min: minAvailableExposureOffset,
-                          max: maxAvailableExposureOffset,
-                          divisions: 8,
-                          onChanged: onChanged,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : const SizedBox.shrink(),
+                    )
+                  : const SizedBox.shrink(),
+            );
+          },
         ),
       ),
     );
@@ -1160,32 +1187,38 @@ class _ExposureOffsetBuilder extends StatelessWidget {
 
 class _FocusOffsetBuilder extends StatelessWidget {
   final Offset offset;
-  final bool showFocus;
+  final ValueNotifier<bool>? focusNotifier;
   final AnimationController focusModeController;
 
   const _FocusOffsetBuilder({
     required this.offset,
     required this.focusModeController,
-    this.showFocus = false,
+    this.focusNotifier,
     Key? key,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    if (focusNotifier == null) return const SizedBox.shrink();
     return Stack(
       children: [
-        Positioned(
-          top: offset.dy,
-          left: offset.dx,
-          child: showFocus
-              ? ScaleTransition(
-                  scale: focusModeController,
-                  child: Image.asset(
-                    'assets/images/frame.png',
-                    color: Colors.yellow,
-                  ),
-                )
-              : const SizedBox.shrink(),
+        ValueListenableBuilder(
+          valueListenable: focusNotifier!,
+          builder: (ctx, bool value, child) {
+            return Positioned(
+              top: offset.dy,
+              left: offset.dx,
+              child: value
+                  ? ScaleTransition(
+                      scale: focusModeController,
+                      child: Image.asset(
+                        'assets/images/frame.png',
+                        color: Colors.yellow,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            );
+          },
         ),
       ],
     );
@@ -1228,28 +1261,33 @@ class _IconButtonBuilder extends StatelessWidget {
 }
 
 class _BlurSwitcherBuilder extends StatelessWidget {
-  final bool showBlur;
-  const _BlurSwitcherBuilder({this.showBlur = false, Key? key})
-      : super(key: key);
+  final ValueNotifier<bool>? blurNotifier;
+  const _BlurSwitcherBuilder({this.blurNotifier, Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    double _begin = showBlur ? 5.0 : 0.0;
-    double _end = showBlur ? 5.0 : 0.0;
+    if (blurNotifier == null) return const SizedBox.shrink();
 
     return Positioned.fill(
-      child: TweenAnimationBuilder<double>(
-        tween: Tween<double>(begin: _begin, end: _end),
-        duration: Duration(milliseconds: 100),
-        curve: Curves.easeIn,
-        builder: (ctx, value, _) {
-          return BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: value, sigmaY: value),
-            child: showBlur
-                ? Container(color: Colors.transparent)
-                : const SizedBox.shrink(),
+      child: ValueListenableBuilder(
+        valueListenable: blurNotifier!,
+        builder: ((context, bool valueNotifier, child) {
+          double _begin = valueNotifier ? 5.0 : 0.0;
+          double _end = valueNotifier ? 5.0 : 0.0;
+          return TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: _begin, end: _end),
+            duration: Duration(milliseconds: 100),
+            curve: Curves.easeIn,
+            builder: (ctx, value, _) {
+              return BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: value, sigmaY: value),
+                child: valueNotifier
+                    ? Container(color: Colors.transparent)
+                    : const SizedBox.shrink(),
+              );
+            },
           );
-        },
+        }),
       ),
     );
   }
