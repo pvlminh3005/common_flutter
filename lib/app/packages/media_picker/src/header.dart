@@ -54,137 +54,126 @@ class _HeaderState extends State<Header> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Container(
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: IconButton(
-                icon: widget.decoration!.cancelIcon ??
+          Material(
+            color: Colors.transparent,
+            clipBehavior: Clip.hardEdge,
+            shape: CircleBorder(),
+            child: InkWell(
+              child: Padding(
+                padding: const EdgeInsets.all(10.0),
+                child: widget.decoration!.cancelIcon ??
                     Icon(Icons.arrow_back_outlined),
-                onPressed: () {
-                  if (_arrowAnimation.value == 1)
-                    _arrowAnimController!.reverse();
-                  widget.onBack();
-                }),
-          ),
-          Expanded(
-            flex: 3,
-            child: Center(
-              child: ScaleMedia(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    AnimatedSwitcher(
-                      duration: Duration(milliseconds: 200),
-                      transitionBuilder:
-                          (Widget child, Animation<double> animation) {
-                        return SlideTransition(
-                          child: child,
-                          position: Tween<Offset>(
-                                  begin: Offset(0.0, -0.5),
-                                  end: Offset(0.0, 0.0))
-                              .animate(animation),
-                        );
-                      },
-                      child: Text(
-                        widget.selectedAlbum.name,
-                        style: widget.decoration!.albumTitleStyle,
-                        key: ValueKey<String>(widget.selectedAlbum.id),
-                      ),
-                    ),
-                    AnimatedBuilder(
-                      animation: _arrowAnimation,
-                      builder: (context, child) => Transform.rotate(
-                        angle: _arrowAnimation.value * math.pi,
-                        child: Icon(
-                          Icons.keyboard_arrow_up_outlined,
-                          size: (widget
-                                      .decoration!.albumTitleStyle?.fontSize) !=
-                                  null
-                              ? widget.decoration!.albumTitleStyle!.fontSize! *
-                                  1.5
-                              : 20,
-                          color: widget.decoration!.albumTitleStyle?.color ??
-                              Theme.of(context).primaryColor,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                onTap: () {
-                  if (widget.albumController.isPanelOpen) {
-                    widget.albumController.close();
-                    _arrowAnimController!.reverse();
-                  }
-                  if (widget.albumController.isPanelClosed) {
-                    widget.albumController.open();
-                    _arrowAnimController!.forward();
-                  }
-                },
               ),
+              onTap: () {
+                if (_arrowAnimation.value == 1) _arrowAnimController!.reverse();
+                widget.onBack();
+              },
             ),
           ),
+          ScaleMedia(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedSwitcher(
+                  duration: Duration(milliseconds: 200),
+                  transitionBuilder:
+                      (Widget child, Animation<double> animation) {
+                    return SlideTransition(
+                      child: child,
+                      position: Tween<Offset>(
+                              begin: Offset(0.0, -0.5), end: Offset(0.0, 0.0))
+                          .animate(animation),
+                    );
+                  },
+                  child: Text(
+                    widget.selectedAlbum.name,
+                    style: widget.decoration!.albumTitleStyle,
+                    key: ValueKey<String>(widget.selectedAlbum.id),
+                  ),
+                ),
+                AnimatedBuilder(
+                  animation: _arrowAnimation,
+                  builder: (context, child) => Transform.rotate(
+                    angle: _arrowAnimation.value * math.pi,
+                    child: Icon(
+                      Icons.keyboard_arrow_up_outlined,
+                      size: (widget.decoration!.albumTitleStyle?.fontSize) !=
+                              null
+                          ? widget.decoration!.albumTitleStyle!.fontSize! * 1.5
+                          : 20,
+                      color: widget.decoration!.albumTitleStyle?.color ??
+                          Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            onTap: () {
+              if (widget.albumController.isPanelOpen) {
+                widget.albumController.close();
+                _arrowAnimController!.reverse();
+              }
+              if (widget.albumController.isPanelClosed) {
+                widget.albumController.open();
+                _arrowAnimController!.forward();
+              }
+            },
+          ),
           if (widget.mediaCount == MediaCount.multiple)
-            Expanded(
-              flex: 1,
-              child: AnimatedSwitcher(
-                duration: Duration(milliseconds: 100),
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  return SlideTransition(
-                    child: child,
-                    position: Tween<Offset>(
-                            begin: Offset(1, 0.0), end: Offset(0.0, 0.0))
-                        .animate(animation),
-                  );
-                },
-                child: (selectedMedia.length > 0)
-                    ? TextButton(
-                        key: Key('button'),
+            AnimatedSwitcher(
+              duration: Duration(milliseconds: 100),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return SlideTransition(
+                  child: child,
+                  position: Tween<Offset>(
+                          begin: Offset(1, 0.0), end: Offset(0.0, 0.0))
+                      .animate(animation),
+                );
+              },
+              child: (selectedMedia.length > 0)
+                  ? InkWell(
+                      child: Padding(
+                        padding: const EdgeInsets.all(10.0),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(
-                              widget.decoration!.completeText,
-                              style: widget.decoration!.completeTextStyle ??
-                                  TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500),
-                            ),
-                            Text(
                               ' (${selectedMedia.length})',
                               style: TextStyle(
                                 color: widget
                                         .decoration!.completeTextStyle?.color ??
-                                    Colors.white,
+                                    Colors.black,
                                 fontSize: widget.decoration!.completeTextStyle
                                             ?.fontSize !=
                                         null
                                     ? widget.decoration!.completeTextStyle!
                                             .fontSize! *
-                                        0.77
+                                        0.8
                                     : 11,
                                 fontWeight: FontWeight.w300,
                               ),
                             ),
+                            const SizedBox(width: 5),
+                            Icon(
+                              Icons.send_rounded,
+                              color: Theme.of(context).primaryColor,
+                              size: (widget.decoration!.albumTitleStyle
+                                          ?.fontSize) !=
+                                      null
+                                  ? widget.decoration!.albumTitleStyle!
+                                          .fontSize! *
+                                      1.5
+                                  : 25,
+                            ),
                           ],
                         ),
-                        onPressed: () => widget.onDone(selectedMedia),
-                        style: widget.decoration!.completeButtonStyle ??
-                            ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all(
-                                  Theme.of(context).primaryColor),
-                              shape: MaterialStateProperty.all(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(3),
-                                ),
-                              ),
-                            ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
+                      ),
+                      onTap: () => widget.onDone(selectedMedia),
+                    )
+                  : const SizedBox.shrink(),
             ),
         ],
       ),
