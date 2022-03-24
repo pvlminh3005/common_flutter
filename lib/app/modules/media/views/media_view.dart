@@ -19,6 +19,7 @@ class MediaView extends GetView<MediaController> {
         child: previewList(),
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Get.theme.primaryColor,
         onPressed: () {
           openImagePicker(context);
         },
