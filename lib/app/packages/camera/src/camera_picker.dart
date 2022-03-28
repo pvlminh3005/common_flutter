@@ -1355,7 +1355,7 @@ class _CounterTime extends StatefulWidget {
 
 class _CounterTimeState extends State<_CounterTime> {
   final recordNotifier = ValueNotifier<bool>(false);
-  final duration = ValueNotifier<Duration>(Duration(seconds: 0));
+  final duration = ValueNotifier<Duration>(Duration());
 
   String TwoDigits(int n) => n.toString().padLeft(2, '0');
   Timer? _timer;
@@ -1383,46 +1383,47 @@ class _CounterTimeState extends State<_CounterTime> {
       builder: (ctx, bool value, child) {
         if (!value) return const SizedBox.shrink();
 
-        return ValueListenableBuilder(
-          valueListenable: duration,
-          builder: (ctx, Duration value, child) {
-            final hours = TwoDigits(value.inHours.remainder(60));
-            final minutes = TwoDigits(value.inMinutes.remainder(60));
-            final seconds = TwoDigits(value.inSeconds.remainder(60));
-            return AnimatedOpacity(
-              opacity: 1,
-              duration: kTabScrollDuration,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  Positioned(
-                    bottom: 15,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ValueListenableBuilder(
-                          valueListenable: recordNotifier,
-                          builder: (ctx, bool value, child) {
-                            return AnimatedOpacity(
-                              opacity: value ? 1 : 0,
-                              duration: kTabScrollDuration,
-                              child: DecoratedBox(
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border:
-                                      Border.all(color: Colors.red, width: 2.0),
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(4.0),
-                                  child: CircleAvatar(
-                                      radius: 6, backgroundColor: Colors.red),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
+        return AnimatedOpacity(
+          opacity: 1,
+          duration: kTabScrollDuration,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Positioned(
+                bottom: 15,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ValueListenableBuilder(
+                      valueListenable: recordNotifier,
+                      builder: (ctx, bool value, child) {
+                        return AnimatedOpacity(
+                          opacity: value ? 1 : 0,
+                          duration: kTabScrollDuration,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.red, width: 2.0),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: CircleAvatar(
+                                  radius: 6, backgroundColor: Colors.red),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 10),
+                    ValueListenableBuilder(
+                      valueListenable: duration,
+                      builder: (ctx, Duration value, child) {
+                        final hours = TwoDigits(value.inHours.remainder(60));
+                        final minutes =
+                            TwoDigits(value.inMinutes.remainder(60));
+                        final seconds =
+                            TwoDigits(value.inSeconds.remainder(60));
+                        return Text(
                           '$hours:$minutes:$seconds',
                           textAlign: TextAlign.center,
                           style:
@@ -1431,14 +1432,14 @@ class _CounterTimeState extends State<_CounterTime> {
                                     color: Colors.white,
                                     decoration: TextDecoration.none,
                                   ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            );
-          },
+            ],
+          ),
         );
       },
     );
