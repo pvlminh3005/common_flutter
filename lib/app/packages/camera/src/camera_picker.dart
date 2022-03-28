@@ -143,7 +143,6 @@ class _CameraPickerState extends State<CameraPicker>
   CameraType cameraType = CameraType.camera;
   Timer? _timer;
   Timer? _timerExposure;
-  Timer? _timerCountRecord;
 
   //focus offset
   late Offset offsetTap = Offset.zero;
@@ -192,7 +191,6 @@ class _CameraPickerState extends State<CameraPicker>
     WidgetsBinding.instance?.removeObserver(this);
     _timer?.cancel();
     _timerExposure?.cancel();
-    _timerCountRecord?.cancel();
 
     _flashModeControlRowAnimationController.dispose();
     _exposureModeControlRowAnimationController.dispose();
@@ -295,7 +293,7 @@ class _CameraPickerState extends State<CameraPicker>
                       ],
                     ),
                   ),
-                  _CounterTime(counterNotifier: _showCounter),
+                  _CounterTime(_showCounter),
                   _FocusOffsetBuilder(
                     offset: offsetTap,
                     focusModeController:
@@ -1348,37 +1346,32 @@ class _CustomMainButton extends StatelessWidget {
 }
 
 class _CounterTime extends StatefulWidget {
-  final ValueNotifier counterNotifier;
-
-  const _CounterTime({
-    required this.counterNotifier,
-    Key? key,
-  }) : super(key: key);
+  final ValueNotifier<bool> counterNotifier;
+  const _CounterTime(this.counterNotifier, {Key? key}) : super(key: key);
 
   @override
-  State<_CounterTime> createState() => __CounterTimeState();
+  State<_CounterTime> createState() => _CounterTimeState();
 }
 
-class __CounterTimeState extends State<_CounterTime> {
-  late AnimationController animationController;
+class _CounterTimeState extends State<_CounterTime> {
+  final recordNotifier = ValueNotifier<bool>(false);
+  final duration = ValueNotifier<Duration>(Duration(seconds: 0));
+
+  String TwoDigits(int n) => n.toString().padLeft(2, '0');
   Timer? _timer;
-  final _recordIcon = ValueNotifier<bool>(true);
-  final second = ValueNotifier<int>(0);
-  int minute = 0;
-  int hour = 0;
 
   @override
   void dispose() {
-    animationController.dispose();
+    _timer?.cancel();
     super.dispose();
   }
 
   @override
   void didUpdateWidget(covariant _CounterTime oldWidget) {
     if (oldWidget.counterNotifier.value) {
-      timeOut();
+      counterTime();
     } else {
-      resetData();
+      resetTime();
     }
     super.didUpdateWidget(oldWidget);
   }
@@ -1386,104 +1379,92 @@ class __CounterTimeState extends State<_CounterTime> {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder(
-        valueListenable: widget.counterNotifier,
-        builder: (ctx, dynamic value, child) {
-          return AnimatedOpacity(
-            opacity: value ? 1 : 0,
-            duration: kTabScrollDuration,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Positioned(
-                  bottom: 15,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ValueListenableBuilder(
-                        valueListenable: _recordIcon,
-                        builder: (ctx, bool value, child) {
-                          // if (value) timeOut();
-                          return AnimatedOpacity(
-                            opacity: value ? 1 : 0,
-                            duration: kTabScrollDuration,
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border:
-                                    Border.all(color: Colors.red, width: 2.0),
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: CircleAvatar(
-                                    radius: 6, backgroundColor: Colors.red),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 10),
-                      ValueListenableBuilder(
-                        valueListenable: second,
-                        builder:
-                            (BuildContext context, int value, Widget? child) {
-                          return Row(
-                            children: [
-                              _buildCountText(hour),
-                              _buildCountText(minute),
-                              _buildCountText(value, last: true),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        });
-  }
+      valueListenable: widget.counterNotifier,
+      builder: (ctx, bool value, child) {
+        if (!value) return const SizedBox.shrink();
 
-  Widget _buildCountText(int count, {bool last = false}) {
-    final strLast = !last ? ' : ' : '';
-    return Text(
-      count > 9
-          ? '${count.toString() + strLast}'
-          : '0${count.toString() + strLast}',
-      style: Theme.of(context).textTheme.bodyText1?.copyWith(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
+        return ValueListenableBuilder(
+          valueListenable: duration,
+          builder: (ctx, Duration value, child) {
+            final hours = TwoDigits(value.inHours.remainder(60));
+            final minutes = TwoDigits(value.inMinutes.remainder(60));
+            final seconds = TwoDigits(value.inSeconds.remainder(60));
+            return AnimatedOpacity(
+              opacity: 1,
+              duration: kTabScrollDuration,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Positioned(
+                    bottom: 15,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ValueListenableBuilder(
+                          valueListenable: recordNotifier,
+                          builder: (ctx, bool value, child) {
+                            return AnimatedOpacity(
+                              opacity: value ? 1 : 0,
+                              duration: kTabScrollDuration,
+                              child: DecoratedBox(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border:
+                                      Border.all(color: Colors.red, width: 2.0),
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: CircleAvatar(
+                                      radius: 6, backgroundColor: Colors.red),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          '$hours:$minutes:$seconds',
+                          textAlign: TextAlign.center,
+                          style:
+                              Theme.of(context).textTheme.bodyText1?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                    decoration: TextDecoration.none,
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
-  void timeOut() {
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
-      changeStatusRecordIcon();
-      second.value++;
-      if (second.value == 60) {
-        second.value = 0;
-        minute++;
-        if (minute == 60) {
-          minute = 0;
-          hour++;
-        }
-      }
-    });
-  }
-
-  void resetData() {
-    _timer?.cancel();
-    second.value = 0;
-    minute = 0;
-    hour = 0;
-  }
-
   changeStatusRecordIcon() async {
-    _recordIcon.value = false;
+    recordNotifier.value = false;
     await Future.delayed(Duration(milliseconds: 300), () {
-      _recordIcon.value = true;
+      recordNotifier.value = true;
     });
+  }
+
+  void increaseTime() {
+    final seconds = duration.value.inSeconds + 1;
+    duration.value = Duration(seconds: seconds);
+  }
+
+  void counterTime() =>
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        changeStatusRecordIcon();
+        increaseTime();
+      });
+
+  void resetTime() {
+    _timer?.cancel();
+    duration.value = Duration(seconds: 0);
   }
 }
 
