@@ -74,43 +74,50 @@ class _CameraReviewBuilderState extends State<CameraReviewBuilder> {
           leading: BackButton(),
         ),
         backgroundColor: Colors.black,
-        body: Stack(
-          children: [
-            if (widget.isVideo) ...[
-              VideoPlayer(videoController!),
-              Center(
-                child: AnimatedOpacity(
-                  opacity: _showButton ? 1 : 0,
-                  duration: kTabScrollDuration,
-                  child: IconButton(
-                    iconSize: 50,
-                    color: Colors.white,
-                    icon: Icon(
-                      videoController!.value.isPlaying
-                          ? Icons.pause_circle_filled_sharp
-                          : Icons.play_arrow,
+        body: GestureDetector(
+          onTap: () {
+            setState(() {
+              _showButton = !_showButton;
+            });
+          },
+          child: Stack(
+            children: [
+              if (widget.isVideo) ...[
+                VideoPlayer(videoController!),
+                Center(
+                  child: AnimatedOpacity(
+                    opacity: _showButton ? 1 : 0,
+                    duration: kTabScrollDuration,
+                    child: IconButton(
+                      iconSize: 50,
+                      color: Colors.white,
+                      icon: Icon(
+                        videoController!.value.isPlaying
+                            ? Icons.pause_circle_filled_sharp
+                            : Icons.play_arrow,
+                      ),
+                      onPressed: togglePlayPause,
                     ),
-                    onPressed: togglePlayPause,
                   ),
                 ),
-              ),
-            ] else
-              Positioned.fill(child: Image.file(File(widget.file.path))),
-            Positioned(
-              bottom: 10.0,
-              right: 10.0,
-              child: ElevatedButton(
-                child: SizedBox(
-                  height: 40,
-                  width: 60,
-                  child: Center(child: Text('Save')),
+              ] else
+                Positioned.fill(child: Image.file(File(widget.file.path))),
+              Positioned(
+                bottom: 10.0,
+                right: 10.0,
+                child: ElevatedButton(
+                  child: SizedBox(
+                    height: 40,
+                    width: 60,
+                    child: Center(child: Text('Save')),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context, true);
+                  },
                 ),
-                onPressed: () {
-                  Navigator.pop(context, true);
-                },
               ),
-            ),
-          ],
+            ],
+          ),
         ));
   }
 }

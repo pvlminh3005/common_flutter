@@ -137,10 +137,8 @@ class _CameraPickerState extends State<CameraPicker>
   final _showBlur = ValueNotifier<bool>(false);
   final _showExposure = ValueNotifier<bool>(false);
   final _showFocus = ValueNotifier<bool>(false);
+  final _showCounter = ValueNotifier<bool>(false);
   final _cameraType = ValueNotifier<CameraType>(CameraType.camera);
-  final _secondsRecord = ValueNotifier<int>(0);
-  final _minutesRecord = ValueNotifier<int>(0);
-  final _hoursRecord = ValueNotifier<int>(0);
 
   CameraType cameraType = CameraType.camera;
   Timer? _timer;
@@ -297,6 +295,7 @@ class _CameraPickerState extends State<CameraPicker>
                       ],
                     ),
                   ),
+                  _CounterTime(counterNotifier: _showCounter),
                   _FocusOffsetBuilder(
                     offset: offsetTap,
                     focusModeController:
@@ -378,14 +377,6 @@ class _CameraPickerState extends State<CameraPicker>
               onVideoRecordButtonPressed: onVideoRecordButtonPressed,
             ),
     );
-  }
-
-  void setCounterTimeRecord() {
-    const oneSec = const Duration(seconds: 1);
-    _timerCountRecord = Timer.periodic(oneSec, (timer) {
-      _secondsRecord.value++;
-      if (_secondsRecord.value >= 60) {}
-    });
   }
 
   void toggleFlashIcon() {
@@ -648,11 +639,13 @@ class _CameraPickerState extends State<CameraPicker>
 
   void onVideoRecordButtonPressed() {
     isRecording.value = true;
+    _showCounter.value = true;
     startVideoRecording();
   }
 
   void onStopButtonPressed() async {
     isRecording.value = false;
+    _showCounter.value = false;
 
     await Future.delayed(Duration(milliseconds: 500));
 
@@ -1351,6 +1344,146 @@ class _CustomMainButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _CounterTime extends StatefulWidget {
+  final ValueNotifier counterNotifier;
+
+  const _CounterTime({
+    required this.counterNotifier,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<_CounterTime> createState() => __CounterTimeState();
+}
+
+class __CounterTimeState extends State<_CounterTime> {
+  late AnimationController animationController;
+  Timer? _timer;
+  final _recordIcon = ValueNotifier<bool>(true);
+  final second = ValueNotifier<int>(0);
+  int minute = 0;
+  int hour = 0;
+
+  @override
+  void dispose() {
+    animationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant _CounterTime oldWidget) {
+    if (oldWidget.counterNotifier.value) {
+      timeOut();
+    } else {
+      resetData();
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder(
+        valueListenable: widget.counterNotifier,
+        builder: (ctx, dynamic value, child) {
+          return AnimatedOpacity(
+            opacity: value ? 1 : 0,
+            duration: kTabScrollDuration,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Positioned(
+                  bottom: 15,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ValueListenableBuilder(
+                        valueListenable: _recordIcon,
+                        builder: (ctx, bool value, child) {
+                          // if (value) timeOut();
+                          return AnimatedOpacity(
+                            opacity: value ? 1 : 0,
+                            duration: kTabScrollDuration,
+                            child: DecoratedBox(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border:
+                                    Border.all(color: Colors.red, width: 2.0),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: CircleAvatar(
+                                    radius: 6, backgroundColor: Colors.red),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      ValueListenableBuilder(
+                        valueListenable: second,
+                        builder:
+                            (BuildContext context, int value, Widget? child) {
+                          return Row(
+                            children: [
+                              _buildCountText(hour),
+                              _buildCountText(minute),
+                              _buildCountText(value, last: true),
+                            ],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        });
+  }
+
+  Widget _buildCountText(int count, {bool last = false}) {
+    final strLast = !last ? ' : ' : '';
+    return Text(
+      count > 9
+          ? '${count.toString() + strLast}'
+          : '0${count.toString() + strLast}',
+      style: Theme.of(context).textTheme.bodyText1?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+    );
+  }
+
+  void timeOut() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
+      changeStatusRecordIcon();
+      second.value++;
+      if (second.value == 60) {
+        second.value = 0;
+        minute++;
+        if (minute == 60) {
+          minute = 0;
+          hour++;
+        }
+      }
+    });
+  }
+
+  void resetData() {
+    _timer?.cancel();
+    second.value = 0;
+    minute = 0;
+    hour = 0;
+  }
+
+  changeStatusRecordIcon() async {
+    _recordIcon.value = false;
+    await Future.delayed(Duration(milliseconds: 300), () {
+      _recordIcon.value = true;
+    });
   }
 }
 

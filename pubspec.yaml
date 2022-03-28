@@ -10,9 +10,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   dio: ^4.0.4
   dio_http_cache: ^0.3.0
-  flutter:
-    sdk: flutter
-  get: 4.6.1
+  get: ^4.6.1
   intl: ^0.17.0
   video_player: ^2.3.0
   webview_flutter: ^3.0.1
@@ -21,6 +19,8 @@ dependencies:
   sliding_up_panel: ^2.0.0+1
   photo_manager: ^2.0.4
   image_picker: ^0.8.4+11
+  flutter:
+    sdk: flutter
 
 dev_dependencies:
   flutter_lints: ^1.0.0
