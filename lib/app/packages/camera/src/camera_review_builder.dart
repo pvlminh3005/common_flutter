@@ -21,17 +21,19 @@ class _CameraReviewBuilderState extends State<CameraReviewBuilder> {
 
   @override
   void initState() {
-    videoController = VideoPlayerController.file(File(widget.file.path))
-      ..initialize().then((value) {
+    if (widget.isVideo) {
+      videoController = VideoPlayerController.file(File(widget.file.path))
+        ..initialize().then((value) {
+          setState(() {});
+        });
+
+      videoController?.addListener(() {
+        if (videoController!.value.isBuffering) {
+          _showButton = true;
+        }
         setState(() {});
       });
-
-    videoController?.addListener(() {
-      if (videoController!.value.isBuffering) {
-        _showButton = true;
-      }
-      setState(() {});
-    });
+    }
     super.initState();
   }
 
