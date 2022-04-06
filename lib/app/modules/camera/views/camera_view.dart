@@ -26,6 +26,7 @@ class CameraView extends GetView<CameraController> {
                   enableSetExposure: true,
                   enableRecording: true,
                   enablePinchToZoom: true,
+                  onlyEnableRecording: true,
                 ).then((value) {
                   Get.log('$value');
                 });
