@@ -1,6 +1,6 @@
 import 'package:get/get.dart';
 
-import '../../../packages/media_picker/gallery_media_picker.dart';
+import '../../../packages/media_picker_test/gallery_media_picker.dart';
 
 class MediaController extends GetxController with StateMixin<List<MediaModel>> {
   List<MediaModel> mediaList = [];

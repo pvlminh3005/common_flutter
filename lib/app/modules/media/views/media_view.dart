@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
-import '../../../packages/media_picker/gallery_media_picker.dart';
+import '../../../packages/media_picker_test/gallery_media_picker.dart';
 import '../controllers/media_controller.dart';
 
 class MediaView extends GetView<MediaController> {
@@ -57,22 +57,18 @@ class MediaView extends GetView<MediaController> {
   }
 
   void openImagePicker(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return MediaPicker(
-          mediaList: mediaList,
-          onPick: controller.pickGallery,
-          onCancel: () => Navigator.pop(context),
-          mediaCount: MediaCount.multiple,
-          mediaType: MediaType.image,
-          // decoration: PickerDecoration(
-          //   actionBarPosition: ActionBarPosition.top,
-          //   blurStrength: 2,
-          //   completeText: 'Tiếp tục',
-          // ),
-        );
-      },
+    return MediaPicker.picker(
+      context,
+      mediaList: mediaList,
+      onPick: controller.pickGallery,
+      onCancel: () => Navigator.pop(context),
+      mediaCount: MediaCount.multiple,
+      mediaType: MediaType.other,
+      // decoration: PickerDecoration(
+      //   actionBarPosition: ActionBarPosition.top,
+      //   blurStrength: 2,
+      //   completeText: 'Tiếp tục',
+      // ),
     );
   }
 }

@@ -317,18 +317,18 @@ class _CameraPickerState extends State<CameraPicker>
                 ],
               ),
             ),
-            if (!widget.onlyEnableRecording && widget.enableRecording)
-              _TabBarBuilder(
-                tabController: tabController,
-                onTap: (index) async {
-                  _showBlur.value = true;
-                  setState(() {
-                    cameraType = CameraType.values[index];
-                  });
-                  Future.delayed(kTabScrollDuration)
-                      .then((_) => _showBlur.value = false);
-                },
-              ),
+            // if (!widget.onlyEnableRecording && widget.enableRecording)
+            //   _TabBarBuilder(
+            //     tabController: tabController,
+            //     onTap: (index) async {
+            //       _showBlur.value = true;
+            //       setState(() {
+            //         cameraType = CameraType.values[index];
+            //       });
+            //       Future.delayed(kTabScrollDuration)
+            //           .then((_) => _showBlur.value = false);
+            //     },
+            //   ),
             _bottomBuilder(),
           ],
         ),

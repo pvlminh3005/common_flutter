@@ -42,6 +42,14 @@ class _MediaListState extends State<MediaList> {
   }
 
   @override
+  void didUpdateWidget(covariant MediaList oldWidget) {
+    if (widget.album.name != oldWidget.album.name) {
+      _fetchNewMedia();
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return NotificationListener<ScrollNotification>(
       onNotification: (ScrollNotification scroll) {

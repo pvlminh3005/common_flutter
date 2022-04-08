@@ -10,17 +10,17 @@ dependencies:
   cupertino_icons: ^1.0.2
   dio: ^4.0.4
   dio_http_cache: ^0.3.0
-  get: ^4.6.1
-  intl: ^0.17.0
-  video_player: ^2.3.0
-  webview_flutter: ^3.0.1
-  google_maps_flutter: ^2.1.3
-
-  sliding_up_panel: ^2.0.0+1
-  photo_manager: ^2.0.4
-  image_picker: ^0.8.4+11
   flutter:
     sdk: flutter
+  get: ^4.6.1
+  google_maps_flutter: ^2.1.3
+  image_picker: ^0.8.4+11
+  intl: ^0.17.0
+  photo_manager: ^2.0.4
+  provider: ^6.0.2
+  sliding_up_panel: ^2.0.0+1
+  video_player: ^2.3.0
+  webview_flutter: ^3.0.1
 
 dev_dependencies:
   flutter_lints: ^1.0.0

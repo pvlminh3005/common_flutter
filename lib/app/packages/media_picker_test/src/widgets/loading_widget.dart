@@ -12,7 +12,9 @@ class LoadingWidget extends StatelessWidget {
     return Center(
       child: (decoration.loadingWidget != null)
           ? decoration.loadingWidget
-          : CircularProgressIndicator(),
+          : CircularProgressIndicator(
+              color: Theme.of(context).backgroundColor,
+            ),
     );
   }
 }

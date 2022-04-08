@@ -8,7 +8,8 @@ enum MediaCount {
 enum MediaType {
   video,
   image,
-  all,
+  other,
+  audio,
 }
 enum ActionBarPosition {
   top,
