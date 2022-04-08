@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'package:get/get.dart';
 
-import '../../../packages/media_picker_test/gallery_media_picker.dart';
+// import '../../../packages/media_picker_test/gallery_media_picker.dart';
 import '../controllers/media_controller.dart';
+import '/app/packages/media_picker/media_picker.dart';
 
 class MediaView extends GetView<MediaController> {
-  List<MediaModel> get mediaList => controller.mediaList;
+  // List<MediaModel> get mediaList => controller.mediaList;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -21,7 +23,8 @@ class MediaView extends GetView<MediaController> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: Get.theme.primaryColor,
         onPressed: () {
-          openImagePicker(context);
+          // openImagePicker(context);
+          picker(context, RequestType.common);
         },
         child: Icon(Icons.add),
       ),
@@ -56,19 +59,38 @@ class MediaView extends GetView<MediaController> {
     );
   }
 
-  void openImagePicker(BuildContext context) {
-    return MediaPicker.picker(
+  // void openImagePicker(BuildContext context) {
+  //   return MediaPicker.picker(
+  //     context,
+  //     mediaList: mediaList,
+  //     onPick: controller.pickGallery,
+  //     onCancel: () => Navigator.pop(context),
+  //     mediaCount: MediaCount.multiple,
+  //     mediaType: MediaType.other,
+  //     // decoration: PickerDecoration(
+  //     //   actionBarPosition: ActionBarPosition.top,
+  //     //   blurStrength: 2,
+  //     //   completeText: 'Tiếp tục',
+  //     // ),
+  //   );
+  // }
+
+  void picker(BuildContext context, RequestType type) {
+    MediaPicker.picker(
       context,
-      mediaList: mediaList,
-      onPick: controller.pickGallery,
-      onCancel: () => Navigator.pop(context),
-      mediaCount: MediaCount.multiple,
-      mediaType: MediaType.other,
-      // decoration: PickerDecoration(
-      //   actionBarPosition: ActionBarPosition.top,
-      //   blurStrength: 2,
-      //   completeText: 'Tiếp tục',
-      // ),
+      type: type, enableMultiple: true, enableReview: true,
+      // maxDuration: const Duration(minutes: 1),
+      multiCallback: (List<AssetEntity> assets) {
+        //return list if isMulti true
+      },
+      singleCallback: (AssetEntity asset) {
+        //return single item if  isMulti false
+      },
+      // leadingBuilder: (_) {
+      //   return GestureDetector(
+      //     child: const Icon(Icons.camera),
+      //   );
+      // },
     );
   }
 }

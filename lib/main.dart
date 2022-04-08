@@ -13,6 +13,14 @@ void main() async {
       getPages: AppPages.routes,
       theme: ThemeData(
         primaryColor: Colors.black,
+        backgroundColor: Colors.black,
+        // colorScheme: const ColorScheme.dark(
+        //   primary: Colors.green,
+        //   secondary: Colors.greenAccent,
+        //   surface: Color(0xff121212),
+        //   background: Colors.black,
+        //   error: Colors.red,
+        // ),
         appBarTheme: AppBarTheme(backgroundColor: Colors.black),
       ),
     ),

@@ -5,11 +5,9 @@ class Header extends StatelessWidget with PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<MediaPickerProvider>(context, listen: false);
     return AppBar(
       elevation: 0.0,
-      backgroundColor: Theme.of(context).backgroundColor,
-      leading: CloseButton(onPressed: provider.onBack),
+      leading: CloseButton(),
       title: const MediaSelector(),
       actions: [
         SelectedButton(),

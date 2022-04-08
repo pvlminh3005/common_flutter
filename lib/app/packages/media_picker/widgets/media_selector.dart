@@ -16,7 +16,7 @@ class _MediaSelectorState extends State<MediaSelector>
   void initState() {
     _arrowAnimController = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: 100),
+      duration: Duration(milliseconds: 300),
     );
     _arrowAnimation = Tween<double>(
       begin: 0,
@@ -34,17 +34,21 @@ class _MediaSelectorState extends State<MediaSelector>
 
   @override
   Widget build(BuildContext context) {
+    final provider = Provider.of<MediaPickerProvider>(context, listen: false);
+
     return GestureDetector(
-      onTap: () {},
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          vertical: 8.0,
-          horizontal: 12.0,
+      onTap: () {
+        provider.togglePath();
+      },
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15.0),
         ),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(15.0),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            vertical: 5.0,
+            horizontal: 6.0,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -58,7 +62,6 @@ class _MediaSelectorState extends State<MediaSelector>
                     style: TextStyle(
                       fontSize: 13.0,
                       color: Colors.black,
-                      fontWeight: FontWeight.w400,
                     ),
                   );
                 },
@@ -71,18 +74,22 @@ class _MediaSelectorState extends State<MediaSelector>
                 ),
                 child: Selector<MediaPickerProvider, bool>(
                   selector: (_, provider) => provider.switchPath,
-                  builder: (_, bool switchPath, __) {
+                  builder: (_, switchPath, child) {
                     return AnimatedBuilder(
                       animation: _arrowAnimation,
                       builder: (context, _) {
+                        if (provider.switchPath) {
+                          _arrowAnimController!.forward();
+                        } else {
+                          _arrowAnimController!.reverse();
+                        }
                         return Transform.rotate(
-                          angle: switchPath
-                              ? _arrowAnimation.value * math.pi
-                              : 0.0,
+                          angle: _arrowAnimation.value * math.pi,
                           alignment: Alignment.center,
                           child: const Icon(
                             Icons.keyboard_arrow_down,
                             color: Colors.white,
+                            size: 20,
                           ),
                         );
                       },
