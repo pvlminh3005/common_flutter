@@ -161,4 +161,21 @@ class MediaPickerProvider extends ChangeNotifier {
       throw Exception();
     }
   }
+
+  void onSelectItem(AssetEntity asset) {
+    if (enableMultiple) {
+      if (selects.contains(asset)) {
+        selects = selects.where((item) => item != asset).toList();
+      } else {
+        if (selects.length < limit) {
+          selects.add(asset);
+        }
+      }
+    } else {
+      if (!selects.contains(asset)) {
+        selects = List.from([asset]);
+      }
+    }
+    notifyListeners();
+  }
 }
