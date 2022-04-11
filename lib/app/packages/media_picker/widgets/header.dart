@@ -11,6 +11,7 @@ class Header extends StatelessWidget with PreferredSizeWidget {
       title: const MediaSelector(),
       actions: [
         SelectedButton(),
+        const SizedBox(width: 10),
       ],
     );
   }

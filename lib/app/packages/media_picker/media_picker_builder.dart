@@ -19,6 +19,7 @@ class MediaPickerBuilder extends StatelessWidget {
           return hasAssetsToDisplay
               ? Stack(
                   children: [
+                    GalleryGridBuilder(),
                     PathEntityList(),
                   ],
                 )

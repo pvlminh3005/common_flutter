@@ -37,21 +37,21 @@ class MediaView extends GetView<MediaController> {
       child: Align(
         alignment: Alignment.topCenter,
         child: controller.obx(
-          (state) => SingleChildScrollView(
-            physics: AlwaysScrollableScrollPhysics(),
-            child: Wrap(
-              spacing: 5.0,
-              runSpacing: 5.0,
-              children: List.generate(
-                state!.length,
-                (index) => Image.memory(
-                  state[index].thumbnail!,
-                  fit: BoxFit.cover,
-                  width: 80.0,
-                  height: 80.0,
-                ),
-              ),
+          (state) => GridView.builder(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 4,
+              crossAxisSpacing: 5,
+              mainAxisSpacing: 5,
             ),
+            itemCount: state!.length,
+            itemBuilder: (_, int index) {
+              return AssetEntityImage(
+                state[index],
+                height: 80.0,
+                width: 80.0,
+                fit: BoxFit.cover,
+              );
+            },
           ),
           onEmpty: Center(child: Text('Empty')),
         ),
@@ -78,19 +78,14 @@ class MediaView extends GetView<MediaController> {
   void picker(BuildContext context, RequestType type) {
     MediaPicker.picker(
       context,
-      type: type, enableMultiple: true, enableReview: true,
-      // maxDuration: const Duration(minutes: 1),
+      type: type,
+      enableMultiple: true,
+      enableReview: true,
+      gridCount: 3,
       multiCallback: (List<AssetEntity> assets) {
-        //return list if isMulti true
+        controller.pickGallery(assets);
       },
-      singleCallback: (AssetEntity asset) {
-        //return single item if  isMulti false
-      },
-      // leadingBuilder: (_) {
-      //   return GestureDetector(
-      //     child: const Icon(Icons.camera),
-      //   );
-      // },
+      singleCallback: (AssetEntity asset) {},
     );
   }
 }

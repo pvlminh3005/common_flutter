@@ -51,6 +51,7 @@ class SelectIndicator extends StatelessWidget {
         child: Container(
           width: indicatorSize,
           height: indicatorSize,
+          constraints: BoxConstraints(maxHeight: 32.0, maxWidth: 32.0),
           margin: EdgeInsets.all(
             context.width / gridCount / (isAppleOS ? 12.0 : 15.0),
           ),
@@ -60,9 +61,9 @@ class SelectIndicator extends StatelessWidget {
             height: indicatorSize / (isAppleOS ? 1.25 : 1.5),
             decoration: BoxDecoration(
               border: !selected
-                  ? Border.all(color: Colors.white, width: 2.0)
+                  ? Border.all(color: Colors.white, width: 1.5)
                   : null,
-              color: selected ? Theme.of(context).primaryColor : null,
+              color: selected ? Theme.of(context).primaryColor : Colors.black26,
               shape: BoxShape.circle,
             ),
             child: AnimatedSwitcher(

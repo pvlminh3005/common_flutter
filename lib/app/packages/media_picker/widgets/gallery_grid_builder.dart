@@ -1,7 +1,7 @@
 part of media_picker;
 
-class ListBuilder extends StatelessWidget {
-  const ListBuilder({Key? key}) : super(key: key);
+class GalleryGridBuilder extends StatelessWidget {
+  const GalleryGridBuilder({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -14,11 +14,17 @@ class ListBuilder extends StatelessWidget {
           padding: const EdgeInsets.all(10),
           itemCount: assets.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: context.gridCount,
+            crossAxisCount: context.gridCount(gridCount: provider.gridCount),
             crossAxisSpacing: 5,
             mainAxisSpacing: 5,
           ),
           itemBuilder: (_, int index) {
+            if (index == 0 && provider.leadingBuilder != null) {
+              return provider.leadingBuilder!(context);
+            }
+            if (provider.leadingBuilder != null) {
+              index = index - 1;
+            }
             final asset = provider.assets[index];
             return _ItemBuilder(asset: asset, index: index);
           },
@@ -40,7 +46,8 @@ class _ItemBuilder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<MediaPickerProvider>(context, listen: false);
-    final size = context.width / context.gridCount;
+    final size =
+        context.width / context.gridCount(gridCount: provider.gridCount);
     final scale = math.min(1, size / 100);
     final _size = ThumbnailSize(size ~/ scale, size ~/ scale);
     return Stack(
@@ -64,16 +71,17 @@ class _ItemBuilder extends StatelessWidget {
               selected: selects.contains(asset),
               onReview: () {
                 if (provider.enableReview) {
-                  // Navigator.of(context).push(
-                  //   MaterialPageRoute(
-                  //     builder: (_) => MediaBuilderPreviewBuilder(
-                  //       assets: context.watch<MediaPickerProvider>().assets,
-                  //       index: index,
-                  //     ),
-                  //   ),
-                  // );
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => MediaBuilderPreviewBuilder(
+                        assets: context.watch<MediaPickerProvider>().assets,
+                        index: index,
+                        checked: selects.contains(asset),
+                      ),
+                    ),
+                  );
                 } else {
-                  // provider.onSelectItem(asset);
+                  provider.onSelectItem(asset);
                 }
               },
             );
@@ -85,10 +93,10 @@ class _ItemBuilder extends StatelessWidget {
             return SelectIndicator(
               selected: selects.contains(asset),
               onTap: () {
-                // provider.onSelectItem(asset);
+                provider.onSelectItem(asset);
               },
               isMulti: provider.enableMultiple,
-              gridCount: context.gridCount,
+              gridCount: context.gridCount(gridCount: provider.gridCount),
               selectText: (selects.indexOf(asset) + 1).toString(),
             );
           },

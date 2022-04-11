@@ -43,7 +43,7 @@ class _MediaSelectorState extends State<MediaSelector>
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(15.0),
+          borderRadius: BorderRadius.circular(5.0),
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(

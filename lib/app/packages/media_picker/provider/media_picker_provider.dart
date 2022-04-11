@@ -5,15 +5,18 @@ const int _pageSize = 80;
 class MediaPickerProvider extends ChangeNotifier {
   final Duration routeDuration;
   final RequestType type;
-  final int limit;
+  final int limit, gridCount;
   final bool enableMultiple, enableReview;
+  final WidgetBuilder? leadingBuilder;
 
   MediaPickerProvider({
     required this.routeDuration,
     this.type = RequestType.common,
     this.limit = 10,
+    this.gridCount = 3,
     this.enableMultiple = false,
     this.enableReview = false,
+    this.leadingBuilder,
   }) {
     Future<void>.delayed(routeDuration).then((_) {
       getAssetPathList().whenComplete(() {
@@ -168,7 +171,7 @@ class MediaPickerProvider extends ChangeNotifier {
         selects = selects.where((item) => item != asset).toList();
       } else {
         if (selects.length < limit) {
-          selects.add(asset);
+          selects = [...selects, asset];
         }
       }
     } else {

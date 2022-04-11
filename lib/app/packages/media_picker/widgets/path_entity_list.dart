@@ -33,6 +33,7 @@ class PathEntityList extends StatelessWidget {
                         bottomRight: Radius.circular(10.0),
                       )
                     : null,
+                color: Theme.of(context).scaffoldBackgroundColor,
               ),
               child: Selector<MediaPickerProvider,
                   Map<AssetPathEntity?, Uint8List?>>(

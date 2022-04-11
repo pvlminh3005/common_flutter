@@ -1,8 +1,10 @@
+import 'package:custom_common/app/packages/media_picker/media_picker.dart';
 import 'package:get/get.dart';
 
 import '../../../packages/media_picker_test/gallery_media_picker.dart';
 
-class MediaController extends GetxController with StateMixin<List<MediaModel>> {
+class MediaController extends GetxController
+    with StateMixin<List<AssetEntity>> {
   List<MediaModel> mediaList = [];
 
   @override
@@ -15,7 +17,7 @@ class MediaController extends GetxController with StateMixin<List<MediaModel>> {
     change([], status: RxStatus.empty());
   }
 
-  void pickGallery(List<MediaModel> selectList) {
+  void pickGallery(List<AssetEntity> selectList) {
     change([...state!, ...selectList], status: RxStatus.success());
     Get.back();
   }

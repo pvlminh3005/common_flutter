@@ -13,7 +13,7 @@ void main() async {
       getPages: AppPages.routes,
       theme: ThemeData(
         primaryColor: Colors.black,
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.blue,
         // colorScheme: const ColorScheme.dark(
         //   primary: Colors.green,
         //   secondary: Colors.greenAccent,
