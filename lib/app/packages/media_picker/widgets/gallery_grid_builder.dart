@@ -76,7 +76,6 @@ class _ItemBuilder extends StatelessWidget {
                       builder: (_) => MediaBuilderPreviewBuilder(
                         assets: context.watch<MediaPickerProvider>().assets,
                         index: index,
-                        checked: selects.contains(asset),
                       ),
                     ),
                   );

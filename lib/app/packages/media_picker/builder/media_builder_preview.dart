@@ -5,11 +5,9 @@ class MediaBuilderPreviewBuilder extends StatefulWidget {
     Key? key,
     required this.assets,
     this.index = 0,
-    this.checked = false,
   }) : super(key: key);
   final List<AssetEntity> assets;
   final int index;
-  final bool checked;
 
   @override
   _MediaBuilderPreviewBuilderState createState() =>
@@ -32,13 +30,11 @@ class _MediaBuilderPreviewBuilderState extends State<MediaBuilderPreviewBuilder>
   late int _currentIndex;
   int get currentIndex => _currentIndex;
   int get total => widget.assets.length;
-  final checkedNotifier = ValueNotifier(false);
 
   set currentIndex(int value) {
-    if (_currentIndex == value) {
-      return;
+    if (_currentIndex != value) {
+      _currentIndex = value;
     }
-    _currentIndex = value;
   }
 
   @override
@@ -52,7 +48,6 @@ class _MediaBuilderPreviewBuilderState extends State<MediaBuilderPreviewBuilder>
       curve: Curves.easeInOut,
     );
     _currentIndex = widget.index;
-    checkedNotifier.value = widget.checked;
     super.initState();
   }
 
