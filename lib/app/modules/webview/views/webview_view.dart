@@ -1,6 +1,7 @@
 import 'package:custom_common/app/widgets/common/input_custom.dart';
-import 'package:custom_common/app/widgets/common/webview_custom.dart';
 import 'package:flutter/material.dart';
+
+import '../../../packages/webview/webview_builder.dart';
 
 class WebviewView extends StatefulWidget {
   @override

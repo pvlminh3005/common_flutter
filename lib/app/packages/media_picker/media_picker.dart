@@ -7,7 +7,6 @@ import 'dart:developer' as developer;
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:custom_common/app/utilities/formatters/currency_input_formatter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -27,7 +26,7 @@ part 'builder/media_builder_preview.dart';
 part 'builder/video_page_builder.dart';
 part 'builder/video_process.dart';
 part 'widgets/header.dart';
-part 'widgets/loading_decoration.dart';
+part 'widgets/loading_indicator.dart';
 part 'widgets/media_selector.dart';
 part 'widgets/selected_button.dart';
 part 'widgets/path_entity_list.dart';

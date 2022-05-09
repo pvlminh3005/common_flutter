@@ -37,9 +37,7 @@ class _MediaSelectorState extends State<MediaSelector>
     final provider = Provider.of<MediaPickerProvider>(context, listen: false);
 
     return GestureDetector(
-      onTap: () {
-        provider.togglePath();
-      },
+      onTap: provider.togglePath,
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: Colors.white,

@@ -1,7 +1,7 @@
 part of media_picker;
 
-class LoadingDecoration extends StatelessWidget {
-  const LoadingDecoration({
+class LoadingIndicator extends StatelessWidget {
+  const LoadingIndicator({
     this.color = Colors.blue,
     this.strokeWidth = 2.0,
     Key? key,
